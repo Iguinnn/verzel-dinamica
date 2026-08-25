@@ -8,6 +8,9 @@ import {
   type SectorListResponse,
   type UpdateSectorInput,
 } from "@parking/contracts";
+import { cookies } from "next/headers";
+
+import { SESSION_COOKIE } from "@/lib/server/auth";
 
 export class SectorApiError extends Error {
   constructor(
@@ -39,6 +42,11 @@ function apiUrl(): string {
   return process.env.API_URL ?? "http://localhost:3333";
 }
 
+async function cookieHeader(): Promise<string> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  return token ? `${SESSION_COOKIE}=${token}` : "";
+}
+
 async function apiError(response: Response): Promise<SectorApiError> {
   const body: unknown = await response.json().catch(() => undefined);
   const parsed = apiErrorSchema.safeParse(body);
@@ -59,6 +67,10 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   const response = await fetch(`${apiUrl()}${path}`, {
     cache: "no-store",
     ...init,
+    headers: {
+      cookie: await cookieHeader(),
+      ...init?.headers,
+    },
   });
 
   if (!response.ok) {
