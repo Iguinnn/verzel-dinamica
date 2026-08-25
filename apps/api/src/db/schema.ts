@@ -47,7 +47,8 @@ export const users = pgTable("users", {
     .notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
-    .notNull(),
+    .notNull()
+    .$onUpdate(() => new Date()),
 });
 
 export const sectors = pgTable(
@@ -112,16 +113,10 @@ export const reservations = pgTable(
       .notNull(),
   },
   (table) => [
-    index("reservations_user_timeline_idx").on(
-      table.userId,
-      table.createdAt,
-    ),
+    index("reservations_user_timeline_idx").on(table.userId, table.createdAt),
     index("reservations_sector_idx").on(table.sectorId),
     index("reservations_plate_idx").on(table.plate),
-    index("reservations_ranking_idx").on(
-      table.sectorId,
-      table.activatedAt,
-    ),
+    index("reservations_ranking_idx").on(table.sectorId, table.activatedAt),
     uniqueIndex("reservations_active_plate_unique")
       .on(table.plate)
       .where(sql`${table.status} = 'ACTIVE'`),
