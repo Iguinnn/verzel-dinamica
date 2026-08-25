@@ -38,8 +38,8 @@ packages/
 
 ```bash
 npm install
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.example apps/web/.env.local
+cp .env.example .env
+set -a && source .env && set +a
 npm run dev
 ```
 
@@ -47,6 +47,10 @@ O comando `npm run dev` inicia o PostgreSQL pelo Docker Compose, aguarda o
 healthcheck, aplica as migrations pendentes e inicia o frontend e a API no mesmo
 terminal. O frontend fica em `http://localhost:3000` e a API em
 `http://localhost:3333`.
+
+Carregue o `.env` no shell antes de executar comandos que acessam a API, o BFF,
+as migrations, os seeds ou os testes de integracao. O arquivo da raiz concentra
+as variaveis usadas pelos dois apps.
 
 O BFF do Next.js consulta o Express por `API_URL` e valida as respostas com o contrato compartilhado.
 

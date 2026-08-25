@@ -62,11 +62,11 @@ modules/                      One folder per business capability. Own your modul
     session.ts                getSessionUser() — the ONLY auth seam. See below.
     actions.ts                signInAction / signOutAction Server Actions.
     components/               login-form.tsx, login-view.tsx
-  sector-management/          ESTC-1, ADMIN ONLY. Fully mocked for now.
+  sector-management/          ESTC-1, ADMIN ONLY. Uses the sectors BFF.
     types.ts                  Re-exports the shared Sector + form draft types.
-    mock-data.ts              Seed list. Swap for the API when it exists.
+    sector-api.ts             Browser client for the sectors BFF.
     sector-status.ts          Occupancy → livre / atencao / lotado + totals.
-    sector-form.ts            ESTC-1 rules + draft ⇄ Sector mapping.
+    sector-form.ts            ESTC-1 rules + draft ⇄ API input mapping.
     format.ts                 pt-BR currency.
     components/               view, table, row actions, form dialog, status badge, summary cards
   dashboard/components/       dashboard-view.tsx
@@ -171,13 +171,13 @@ module rather than editing generated files.
 
 ## Authentication
 
-Not implemented yet. Everything routes through **one seam**:
+Authentication is integrated with the Express API through **one seam**:
 
-- `modules/auth/session.ts` — `getSessionUser()` returns a hardcoded
-  `SessionUser`. Replace the body with the real lookup and return `null` when
-  signed out; `app/(dashboard)/layout.tsx` already redirects on `null`.
-- `modules/auth/actions.ts` — `signInAction` and `signOutAction` currently just
-  redirect. Add credential checks and cookie teardown here.
+- `modules/auth/session.ts` — `getSessionUser()` resolves the current API
+  session and returns `null` when signed out; `app/(dashboard)/layout.tsx`
+  redirects on `null`.
+- `modules/auth/actions.ts` — `signInAction` and `signOutAction` validate
+  credentials through the API and manage the browser session cookie.
 
 The UI depends only on the `SessionUser` type, so wiring the backend should not
 touch any component. Keep it that way. Authorisation must be enforced on the
@@ -185,7 +185,7 @@ server, not by hiding UI elements.
 
 ## BFF
 
-`apps/web` talks to Express through `lib/server/sectors.ts` using `API_URL`.
+`apps/web` talks to Express through clients under `lib/server/` using `API_URL`.
 The BFF validates successful responses and API errors with the shared Zod
 contracts. Do not add a second in-memory implementation when the Express route
 already exists.
@@ -193,6 +193,18 @@ already exists.
 ## Commands
 
 Run from the repository root.
+
+Use the root `.env.example` as the canonical local environment template. Before
+running the API, web app, migrations, seeds, or integration tests, create and
+load `.env` in the current shell:
+
+```bash
+cp .env.example .env
+set -a && source .env && set +a
+```
+
+Do not start the full-stack environment with the frontend's default mock mode.
+Keep `BACKEND_MODE=api` when validating integration with Express and PostgreSQL.
 
 ```bash
 npm install
