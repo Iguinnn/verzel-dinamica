@@ -3,9 +3,16 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { routes, site } from "@/config/site";
-import { LoginForm } from "@/modules/auth/components/login-form";
+import { RegisterForm } from "@/modules/auth/components/register-form";
 
-export function LoginView({ error = false }: { error?: boolean }) {
+type RegisterError = "mismatch" | "failed" | undefined;
+
+const errorMessages: Record<NonNullable<RegisterError>, string> = {
+  mismatch: "Passwords do not match.",
+  failed: "Could not create the account. The email may already be in use.",
+};
+
+export function RegisterView({ error }: { error?: RegisterError }) {
   return (
     <main className="ds-aurora flex min-h-svh flex-col items-center justify-center gap-8 bg-sidebar p-6">
       <div className="flex flex-col items-center gap-3 text-center">
@@ -19,24 +26,20 @@ export function LoginView({ error = false }: { error?: boolean }) {
       </div>
 
       {error ? (
-        <p className="text-sm text-destructive">Invalid email or password.</p>
+        <p className="text-sm text-destructive">{errorMessages[error]}</p>
       ) : null}
 
-      <LoginForm />
+      <RegisterForm />
 
       <p className="text-xs text-muted-foreground">
-        Don&apos;t have an account?{" "}
+        Already have an account?{" "}
         <Button
           variant="link"
           className="h-auto p-0 text-xs"
-          render={<Link href={routes.register} />}
+          render={<Link href={routes.login} />}
         >
-          Create one
+          Sign in
         </Button>
-      </p>
-
-      <p className="text-xs text-muted-foreground">
-        {site.tagline} · Restricted access
       </p>
     </main>
   );
