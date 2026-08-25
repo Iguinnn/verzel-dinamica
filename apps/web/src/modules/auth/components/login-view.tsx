@@ -3,11 +3,7 @@ import { CircleParkingIcon } from "lucide-react";
 import { site } from "@/config/site";
 import { LoginForm } from "@/modules/auth/components/login-form";
 
-/**
- * Login screen. Rendered outside the app shell, so it has no sidebar and no
- * account menu.
- */
-export function LoginView() {
+export function LoginView({ error = false }: { error?: boolean }) {
   return (
     <main className="ds-aurora flex min-h-svh flex-col items-center justify-center gap-8 bg-sidebar p-6">
       <div className="flex flex-col items-center gap-3 text-center">
@@ -19,6 +15,10 @@ export function LoginView() {
           <p className="text-sm text-muted-foreground">{site.description}</p>
         </div>
       </div>
+
+      {error ? (
+        <p className="text-sm text-destructive">Invalid email or password.</p>
+      ) : null}
 
       <LoginForm />
 
