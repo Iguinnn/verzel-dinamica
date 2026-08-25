@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { SearchIcon } from "lucide-react";
 import type { Sector } from "@parking/contracts";
 
@@ -13,10 +14,10 @@ type SectorBoardProps = {
 };
 
 export function SectorBoard({ sectors }: SectorBoardProps) {
+  const router = useRouter();
   /**
-   * A confirmacao vive so nesta sessao enquanto `POST /v1/reservations` nao
-   * existe, entao o board mantem a propria copia dos setores e decrementa a
-   * cota localmente. Recarregar a pagina devolve os numeros do banco.
+   * A cota cai na hora para o clique responder, e logo em seguida
+   * `router.refresh()` traz os numeros reais do banco por cima.
    */
   const [board, setBoard] = React.useState(sectors);
   const [syncedSectors, setSyncedSectors] = React.useState(sectors);
@@ -55,6 +56,8 @@ export function SectorBoard({ sectors }: SectorBoardProps) {
           : sector,
       ),
     );
+
+    router.refresh();
   }
 
   return (

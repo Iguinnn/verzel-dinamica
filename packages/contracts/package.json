@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "tsx --test src/sectors.test.ts",
+    "test": "tsx --test src/reservations.test.ts src/sectors.test.ts src/users.test.ts src/waitlist.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": { "zod": "^4.0.0" },

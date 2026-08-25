@@ -1,28 +1,42 @@
-import type { ReservationInput } from "@/modules/reservations/lib/reservation-input";
+import type { CreateReservationInput } from "@parking/contracts";
 
 /**
- * TODO(backend): substituir o corpo abaixo por `POST ${API_URL}/v1/reservations`.
- *
- * Este e o unico ponto de contato entre a tela de reservas e a persistencia.
- * A rota esta sendo escrita na ESTC-2; enquanto ela nao sobe, confirmar vale so
- * pelo estado local do board. Ligar o backend significa reescrever este corpo e
- * mais nada:
- *
- *   export async function confirmReservation(input: ReservationInput) {
- *     await fetch("/api/reservations", {
- *       method: "POST",
- *       headers: { "content-type": "application/json" },
- *       body: JSON.stringify(input),
- *     });
- *   }
- *
- * Nenhum componente muda quando isso acontecer. O payload ja chega aqui
- * normalizado por `validateReservationInput`.
+ * Erro de negocio devolvido pelo BFF, ja com mensagem pronta para a tela.
+ * O contrato e validado no servidor por `POST /api/reservations`, entao a
+ * mensagem aqui vem de `createReservationSchema` ou da propria API Express.
  */
+export class ReservationRequestError extends Error {}
+
+function messageFrom(body: unknown): string {
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "error" in body &&
+    typeof (body as { error: unknown }).error === "object" &&
+    (body as { error: unknown }).error !== null
+  ) {
+    const { message } = (body as { error: { message?: unknown } }).error;
+
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+
+  return "Nao foi possivel confirmar a reserva.";
+}
+
+/** Cria a reserva pelo BFF, que repassa a sessao para a API Express. */
 export async function confirmReservation(
-  input: ReservationInput,
+  input: CreateReservationInput,
 ): Promise<void> {
-  // Sem rota para chamar ainda: o payload validado morre aqui e a cota do card
-  // e atualizada pelo board. A linha abaixo sai junto com o `fetch`.
-  void input;
+  const response = await fetch("/api/reservations", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => undefined);
+    throw new ReservationRequestError(messageFrom(body));
+  }
 }

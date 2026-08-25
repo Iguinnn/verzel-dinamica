@@ -15,9 +15,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { confirmReservation } from "@/modules/reservations/lib/create-reservation";
+import {
+  ReservationRequestError,
+  confirmReservation,
+} from "@/modules/reservations/lib/create-reservation";
 import { getOccupiedSpots } from "@/modules/reservations/lib/occupancy";
-import { validateReservationInput } from "@/modules/reservations/lib/reservation-input";
 import { SpotGrid } from "@/modules/reservations/components/spot-grid";
 
 type ReservationDialogProps = {
@@ -61,14 +63,13 @@ export function ReservationDialog({
       return;
     }
 
-    const validation = validateReservationInput({
-      sectorId: sector.id,
-      plate,
-      expectedArrivalAt: expectedArrival,
-    });
+    // O contrato e validado no servidor. Aqui so evitamos enviar uma data que
+    // o `Date` nao consegue interpretar, e mandamos ISO para que o fuso do
+    // usuario prevaleca sobre o fuso do servidor.
+    const arrival = new Date(expectedArrival);
 
-    if (!validation.ok) {
-      setError(validation.message);
+    if (Number.isNaN(arrival.getTime())) {
+      setError("Informe a previsao de chegada.");
       return;
     }
 
@@ -76,11 +77,20 @@ export function ReservationDialog({
     setIsSubmitting(true);
 
     try {
-      await confirmReservation(validation.value);
+      await confirmReservation({
+        sectorId: sector.id,
+        plate,
+        expectedArrivalAt: arrival.toISOString(),
+      });
+
       onConfirmed(sector.id);
       handleOpenChange(false);
-    } catch {
-      setError("Nao foi possivel confirmar a reserva.");
+    } catch (cause) {
+      setError(
+        cause instanceof ReservationRequestError
+          ? cause.message
+          : "Nao foi possivel confirmar a reserva.",
+      );
       setIsSubmitting(false);
     }
   }

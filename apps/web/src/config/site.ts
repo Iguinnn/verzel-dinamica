@@ -9,13 +9,22 @@ export const site = {
 /**
  * Route constants. Import these instead of hardcoding paths so a future
  * rename touches one file.
+ *
+ * Routes are grouped by audience: `/admin/*` is restricted to the `ADMIN`
+ * role, `/user/*` is reachable by any signed-in user. The split is currently
+ * only a folder convention — enforcement arrives with authentication.
  */
 export const routes = {
   login: "/login",
-  dashboard: "/admin",
-  sectors: "/admin/setores",
-  reservations: "/admin/reservas",
-  history: "/admin/historico",
+
+  /** Restricted to ADMIN. */
+  sectorManagement: "/admin/gestao-setores",
+
+  /** Available to any signed-in user. */
+  dashboard: "/user",
+  sectors: "/user/setores",
+  reservations: "/user/reservas",
+  history: "/user/historico",
 } as const;
 
 export type AppRoute = (typeof routes)[keyof typeof routes];
