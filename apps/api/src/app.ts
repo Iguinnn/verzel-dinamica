@@ -1,8 +1,14 @@
 import {
+  cancelReservationResponseSchema,
+  createReservationSchema,
   createSectorSchema,
   joinWaitlistSchema,
   loginRequestSchema,
   registerUserRequestSchema,
+  reservationEventListResponseSchema,
+  reservationIdSchema,
+  reservationListResponseSchema,
+  reservationResponseSchema,
   sectorIdSchema,
   sectorListResponseSchema,
   sectorResponseSchema,
@@ -27,6 +33,7 @@ import {
 } from "./auth/session.js";
 import { sendError } from "./http.js";
 import type { SectorRepository } from "./repositories/sectors.js";
+import type { ReservationRepository } from "./repositories/reservations.js";
 import type { UserRepository } from "./repositories/users.js";
 import { toPublicUser } from "./repositories/users.js";
 import type { WaitlistRepository } from "./repositories/waitlist.js";
@@ -45,6 +52,10 @@ function authValidationMessage(error: ZodError): string {
   }
 
   return "Dados invalidos.";
+}
+
+function reservationValidationMessage(issues: { message: string }[]): string {
+  return issues[0]?.message ?? "Dados da reserva invalidos.";
 }
 
 function sectorValidationMessage(issues: { message: string }[]): string {
@@ -68,11 +79,13 @@ function sessionBody(user: User) {
 export function createApp({
   sectors,
   users,
+  reservations,
   waitlist,
   sessionSecret,
 }: {
   sectors: SectorRepository;
   users: UserRepository;
+  reservations: ReservationRepository;
   waitlist: WaitlistRepository;
   sessionSecret: string;
 }) {
@@ -423,6 +436,257 @@ export function createApp({
     },
   );
 
+  app.get("/v1/reservations", requireAuth, async (request, response) => {
+    if (!request.currentUser) {
+      sendError(
+        response,
+        401,
+        "UNAUTHENTICATED",
+        "E necessario estar autenticado.",
+      );
+      return;
+    }
+
+    try {
+      const data = await reservations.list(request.currentUser);
+      response.json(reservationListResponseSchema.parse({ data }));
+    } catch {
+      sendError(
+        response,
+        500,
+        "RESERVATIONS_QUERY_FAILED",
+        "Nao foi possivel consultar as reservas.",
+      );
+    }
+  });
+
+  app.post("/v1/reservations", requireAuth, async (request, response) => {
+    if (!request.currentUser) {
+      sendError(
+        response,
+        401,
+        "UNAUTHENTICATED",
+        "E necessario estar autenticado.",
+      );
+      return;
+    }
+
+    const input = createReservationSchema.safeParse(request.body);
+    if (!input.success) {
+      sendError(
+        response,
+        400,
+        "INVALID_RESERVATION",
+        reservationValidationMessage(input.error.issues),
+      );
+      return;
+    }
+
+    try {
+      const result = await reservations.create(input.data, request.currentUser);
+
+      if (result.kind === "sector_not_found") {
+        sendError(response, 404, "SECTOR_NOT_FOUND", "Setor nao encontrado.");
+        return;
+      }
+
+      if (result.kind === "sector_full") {
+        sendError(
+          response,
+          409,
+          "SECTOR_FULL",
+          "Setor sem cota disponivel.",
+        );
+        return;
+      }
+
+      if (result.kind === "plate_active") {
+        sendError(
+          response,
+          409,
+          "PLATE_ALREADY_ACTIVE",
+          "Esta placa ja possui uma reserva ativa.",
+        );
+        return;
+      }
+
+      response
+        .status(201)
+        .json(reservationResponseSchema.parse({ data: result.reservation }));
+    } catch {
+      sendError(
+        response,
+        500,
+        "RESERVATION_CREATE_FAILED",
+        "Nao foi possivel criar a reserva.",
+      );
+    }
+  });
+
+  app.get("/v1/reservations/:id", requireAuth, async (request, response) => {
+    if (!request.currentUser) {
+      sendError(
+        response,
+        401,
+        "UNAUTHENTICATED",
+        "E necessario estar autenticado.",
+      );
+      return;
+    }
+
+    const id = reservationIdSchema.safeParse(request.params.id);
+    if (!id.success) {
+      sendError(
+        response,
+        400,
+        "INVALID_RESERVATION_ID",
+        id.error.issues[0]?.message ?? "Identificador de reserva invalido.",
+      );
+      return;
+    }
+
+    try {
+      const result = await reservations.findById(id.data, request.currentUser);
+      if (result.kind === "not_found") {
+        sendError(response, 404, "RESERVATION_NOT_FOUND", "Reserva nao encontrada.");
+        return;
+      }
+
+      response.json(
+        reservationResponseSchema.parse({ data: result.reservation }),
+      );
+    } catch {
+      sendError(
+        response,
+        500,
+        "RESERVATION_QUERY_FAILED",
+        "Nao foi possivel consultar a reserva.",
+      );
+    }
+  });
+
+  app.post(
+    "/v1/reservations/:id/cancel",
+    requireAuth,
+    async (request, response) => {
+      if (!request.currentUser) {
+        sendError(
+          response,
+          401,
+          "UNAUTHENTICATED",
+          "E necessario estar autenticado.",
+        );
+        return;
+      }
+
+      const id = reservationIdSchema.safeParse(request.params.id);
+      if (!id.success) {
+        sendError(
+          response,
+          400,
+          "INVALID_RESERVATION_ID",
+          id.error.issues[0]?.message ?? "Identificador de reserva invalido.",
+        );
+        return;
+      }
+
+      try {
+        const result = await reservations.cancel(id.data, request.currentUser);
+
+        if (result.kind === "not_found") {
+          sendError(
+            response,
+            404,
+            "RESERVATION_NOT_FOUND",
+            "Reserva nao encontrada.",
+          );
+          return;
+        }
+
+        if (result.kind === "not_active") {
+          sendError(
+            response,
+            409,
+            "RESERVATION_NOT_ACTIVE",
+            "Somente reservas ativas podem ser canceladas.",
+          );
+          return;
+        }
+
+        response.json(
+          cancelReservationResponseSchema.parse({
+            data: {
+              reservation: result.reservation,
+              promoted: result.promoted,
+            },
+          }),
+        );
+      } catch {
+        sendError(
+          response,
+          500,
+          "RESERVATION_CANCEL_FAILED",
+          "Nao foi possivel cancelar a reserva.",
+        );
+      }
+    },
+  );
+
+  app.get(
+    "/v1/reservations/:id/events",
+    requireAuth,
+    async (request, response) => {
+      if (!request.currentUser) {
+        sendError(
+          response,
+          401,
+          "UNAUTHENTICATED",
+          "E necessario estar autenticado.",
+        );
+        return;
+      }
+
+      const id = reservationIdSchema.safeParse(request.params.id);
+      if (!id.success) {
+        sendError(
+          response,
+          400,
+          "INVALID_RESERVATION_ID",
+          id.error.issues[0]?.message ?? "Identificador de reserva invalido.",
+        );
+        return;
+      }
+
+      try {
+        const result = await reservations.listEvents(
+          id.data,
+          request.currentUser,
+        );
+
+        if (result.kind === "not_found") {
+          sendError(
+            response,
+            404,
+            "RESERVATION_NOT_FOUND",
+            "Reserva nao encontrada.",
+          );
+          return;
+        }
+
+        response.json(
+          reservationEventListResponseSchema.parse({ data: result.events }),
+        );
+      } catch {
+        sendError(
+          response,
+          500,
+          "RESERVATION_EVENTS_QUERY_FAILED",
+          "Nao foi possivel consultar o historico da reserva.",
+        );
+      }
+    },
+  );
+
   app.post(
     "/v1/sectors/:sectorId/waitlist",
     requireAuth,
@@ -634,6 +898,7 @@ export function createApp({
       }
     },
   );
+
 
   app.use(
     (

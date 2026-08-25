@@ -11,6 +11,7 @@ import {
 
 import { sessionCookie, signSession } from "./auth/session.js";
 import { createApp } from "./app.js";
+import { createMemoryReservationRepository } from "./repositories/reservations.js";
 import type { SectorRepository } from "./repositories/sectors.js";
 import { createMemoryUserRepository } from "./repositories/users.js";
 import type {
@@ -95,6 +96,7 @@ async function startApp(waitlist: WaitlistRepository) {
         updatedAt: now,
       },
     ]),
+    reservations: createMemoryReservationRepository(),
     waitlist,
     sessionSecret,
   }).listen(0);

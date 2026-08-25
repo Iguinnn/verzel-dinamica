@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+import { normalizePlate } from "./reservations.js";
+
 const normalizedPlateSchema = z
   .string()
-  .transform((plate) => plate.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())
+  .transform(normalizePlate)
   .pipe(
     z
       .string()

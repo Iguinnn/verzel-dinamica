@@ -189,12 +189,14 @@ export function createWaitlistRepository(
               actorUserId: input.userId,
               type: "RESERVATION_CREATED",
               occurredAt,
+              details: { plate: input.plate, sectorId: input.sectorId },
             },
             {
               reservationId: reservation.id,
               actorUserId: input.userId,
               type: "WAITLIST_JOINED",
-              occurredAt,
+              occurredAt: new Date(occurredAt.getTime() + 1),
+              details: { plate: input.plate, sectorId: input.sectorId },
             },
           ]);
 
@@ -290,6 +292,9 @@ export function createWaitlistRepository(
             waitlistStatus: waitlistEntries.status,
             reservationStatus: reservations.status,
             userId: reservations.userId,
+            plate: reservations.plate,
+            sectorId: reservations.sectorId,
+            joinedAt: waitlistEntries.joinedAt,
           })
           .from(waitlistEntries)
           .innerJoin(
@@ -311,7 +316,9 @@ export function createWaitlistRepository(
           return "not_waiting";
         }
 
-        const occurredAt = now();
+        const occurredAt = new Date(
+          Math.max(now().getTime(), entry.joinedAt.getTime() + 2),
+        );
 
         await transaction
           .update(waitlistEntries)
@@ -326,6 +333,7 @@ export function createWaitlistRepository(
           actorUserId: userId,
           type: "WAITLIST_LEFT",
           occurredAt,
+          details: { plate: entry.plate, sectorId: entry.sectorId },
         });
 
         return "left";

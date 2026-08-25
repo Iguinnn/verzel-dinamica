@@ -83,8 +83,10 @@ As rotas abaixo exigem uma sessao autenticada:
 - `DELETE /v1/waitlist/:id` registra a saida voluntaria do proprio motorista
   sem apagar o historico.
 
-O cliente nao envia `reservationId`; a API cria a reserva que satisfaz a FK. A
-promocao automatica sera integrada ao futuro fluxo de cancelamento de reservas.
+O cliente nao envia `reservationId`; a API cria a reserva que satisfaz a FK. Ao
+cancelar uma reserva ativa, o backend promove atomicamente a primeira entrada
+da fila. A cota permanece inalterada quando existe promocao e aumenta em uma
+vaga quando a fila esta vazia.
 
 O teste de integracao do repositorio usa o PostgreSQL local:
 

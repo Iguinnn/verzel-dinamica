@@ -12,6 +12,7 @@ import {
 import { sessionCookie, signSession } from "./auth/session.js";
 import { createApp } from "./app.js";
 import { createMemoryUserRepository } from "./repositories/users.js";
+import { createMemoryReservationRepository } from "./repositories/reservations.js";
 import type { SectorRepository } from "./repositories/sectors.js";
 import type { WaitlistRepository } from "./repositories/waitlist.js";
 
@@ -129,6 +130,7 @@ async function startApp(repository: SectorRepository) {
   const server = createApp({
     sectors: repository,
     users,
+    reservations: createMemoryReservationRepository(),
     waitlist: createEmptyWaitlistRepository(),
     sessionSecret,
   }).listen(0);
@@ -274,6 +276,8 @@ test("requires authentication for every protected route", async (context) => {
     { method: "POST", path: "/v1/sectors" },
     { method: "PATCH", path: `/v1/sectors/${initialSector.id}` },
     { method: "DELETE", path: `/v1/sectors/${initialSector.id}` },
+    { method: "GET", path: "/v1/reservations" },
+    { method: "POST", path: "/v1/reservations" },
   ] as const;
 
   for (const route of protectedRoutes) {
