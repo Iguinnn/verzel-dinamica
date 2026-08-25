@@ -12,3 +12,5 @@ coverage/
 !.env.example
 
 apps/api/drizzle/
+apps/api/drizzle.config.js
+apps/api/drizzle.config.js.map
