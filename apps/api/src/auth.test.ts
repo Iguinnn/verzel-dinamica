@@ -13,8 +13,10 @@ import type { Express } from "express";
 
 import { hashPassword } from "./auth/password.js";
 import { createApp } from "./app.js";
+import { createMemoryReservationRepository } from "./repositories/reservations.js";
 import type { SectorRepository } from "./repositories/sectors.js";
 import { createMemoryUserRepository } from "./repositories/users.js";
+import type { WaitlistRepository } from "./repositories/waitlist.js";
 
 const sessionSecret = "test-session-secret";
 
@@ -42,11 +44,27 @@ function createEmptySectorRepository(): SectorRepository {
   };
 }
 
+function createEmptyWaitlistRepository(): WaitlistRepository {
+  return {
+    async join() {
+      return { kind: "sector_not_found" };
+    },
+    async list() {
+      return { kind: "sector_not_found" };
+    },
+    async leave() {
+      return "not_found";
+    },
+  };
+}
+
 function createTestApp() {
   return createApp({
     sessionSecret,
     users: createMemoryUserRepository(),
     sectors: createEmptySectorRepository(),
+    reservations: createMemoryReservationRepository(),
+    waitlist: createEmptyWaitlistRepository(),
   });
 }
 
@@ -224,6 +242,8 @@ test("blocks USER on admin routes and allows ADMIN", async (context) => {
   const adminApp = createApp({
     sessionSecret,
     sectors: createEmptySectorRepository(),
+    reservations: createMemoryReservationRepository(),
+    waitlist: createEmptyWaitlistRepository(),
     users: createMemoryUserRepository([
       {
         id: adminId,
