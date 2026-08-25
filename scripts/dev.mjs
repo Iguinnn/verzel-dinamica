@@ -5,7 +5,15 @@ const processes = [
   spawn("npm", ["run", "dev:web"], { stdio: "inherit", shell: true }),
 ];
 
+let requestedSignal;
+
 function stopProcesses(signal) {
+  if (requestedSignal) {
+    return;
+  }
+
+  requestedSignal = signal;
+
   for (const childProcess of processes) {
     childProcess.kill(signal);
   }
@@ -14,14 +22,18 @@ function stopProcesses(signal) {
 process.on("SIGINT", () => stopProcesses("SIGINT"));
 process.on("SIGTERM", () => stopProcesses("SIGTERM"));
 
-const exitCode = await Promise.race(
-  processes.map(
-    (childProcess) =>
-      new Promise((resolve) => {
-        childProcess.on("exit", (code) => resolve(code ?? 1));
-      }),
-  ),
+const exits = processes.map(
+  (childProcess) =>
+    new Promise((resolve) => {
+      childProcess.on("exit", (code) => resolve(code ?? 1));
+    }),
 );
 
-stopProcesses("SIGTERM");
-process.exitCode = exitCode;
+const exitCode = await Promise.race(exits);
+
+if (!requestedSignal) {
+  stopProcesses("SIGTERM");
+}
+
+await Promise.all(exits);
+process.exitCode = requestedSignal === "SIGINT" ? 0 : exitCode;
