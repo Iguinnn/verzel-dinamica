@@ -135,14 +135,18 @@ test("serves health and lists contract-valid sectors", async (context) => {
   const healthResponse = await fetch(`${baseUrl}/health`);
   assert.deepEqual(await healthResponse.json(), { status: "ok" });
 
-  const anonymousResponse = await fetch(`${baseUrl}/v1/sectors`);
-  assert.equal(anonymousResponse.status, 401);
-
   const sectorsResponse = await fetch(`${baseUrl}/v1/sectors`, {
     headers: driverHeaders,
   });
   assert.equal(sectorsResponse.status, 200);
   sectorListResponseSchema.parse(await sectorsResponse.json());
+
+  const detailResponse = await fetch(
+    `${baseUrl}/v1/sectors/${initialSector.id}`,
+    { headers: driverHeaders },
+  );
+  assert.equal(detailResponse.status, 200);
+  sectorResponseSchema.parse(await detailResponse.json());
 });
 
 test("creates, reads, updates and deletes a sector", async (context) => {
@@ -241,24 +245,62 @@ test("returns conflict when deleting a sector in use", async (context) => {
   assert.equal(error.error.code, "SECTOR_IN_USE");
 });
 
-test("blocks a USER from changing sectors", async (context) => {
+test("requires authentication for every protected route", async (context) => {
+  const { server, baseUrl } = await startApp(createFakeRepository());
+  context.after(() => server.close());
+
+  const protectedRoutes = [
+    { method: "GET", path: "/v1/auth/me" },
+    { method: "GET", path: "/v1/users" },
+    { method: "GET", path: "/v1/admin/session" },
+    { method: "GET", path: "/v1/sectors" },
+    { method: "GET", path: `/v1/sectors/${initialSector.id}` },
+    { method: "POST", path: "/v1/sectors" },
+    { method: "PATCH", path: `/v1/sectors/${initialSector.id}` },
+    { method: "DELETE", path: `/v1/sectors/${initialSector.id}` },
+  ] as const;
+
+  for (const route of protectedRoutes) {
+    const response = await fetch(`${baseUrl}${route.path}`, {
+      method: route.method,
+    });
+
+    assert.equal(
+      response.status,
+      401,
+      `${route.method} ${route.path} must reject anonymous access`,
+    );
+    const error = apiErrorSchema.parse(await response.json());
+    assert.equal(error.error.code, "UNAUTHENTICATED");
+  }
+});
+
+test("blocks a USER from every admin route", async (context) => {
   const { server, baseUrl, driverHeaders } = await startApp(
     createFakeRepository(),
   );
   context.after(() => server.close());
 
-  const response = await fetch(`${baseUrl}/v1/sectors`, {
-    method: "POST",
-    headers: { ...driverHeaders, "content-type": "application/json" },
-    body: JSON.stringify({
-      name: "Setor Sul",
-      location: "Portao B",
-      capacity: 20,
-      hourlyRate: 7.5,
-    }),
-  });
+  const adminRoutes = [
+    { method: "GET", path: "/v1/users" },
+    { method: "GET", path: "/v1/admin/session" },
+    { method: "POST", path: "/v1/sectors" },
+    { method: "PATCH", path: `/v1/sectors/${initialSector.id}` },
+    { method: "DELETE", path: `/v1/sectors/${initialSector.id}` },
+  ] as const;
 
-  assert.equal(response.status, 403);
-  const error = apiErrorSchema.parse(await response.json());
-  assert.equal(error.error.code, "FORBIDDEN");
+  for (const route of adminRoutes) {
+    const response = await fetch(`${baseUrl}${route.path}`, {
+      method: route.method,
+      headers: driverHeaders,
+    });
+
+    assert.equal(
+      response.status,
+      403,
+      `${route.method} ${route.path} must reject USER access`,
+    );
+    const error = apiErrorSchema.parse(await response.json());
+    assert.equal(error.error.code, "FORBIDDEN");
+  }
 });
