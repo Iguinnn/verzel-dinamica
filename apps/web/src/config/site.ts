@@ -16,6 +16,7 @@ export const site = {
  */
 export const routes = {
   login: "/login",
+  register: "/register",
 
   /** Restricted to ADMIN. */
   sectorManagement: "/admin/gestao-setores",
@@ -23,6 +24,7 @@ export const routes = {
   /** Available to any signed-in user. */
   dashboard: "/user",
   sectors: "/user/setores",
+  reservations: "/user/reservas",
   waitlist: "/user/lista-de-espera",
   history: "/user/historico",
 } as const;

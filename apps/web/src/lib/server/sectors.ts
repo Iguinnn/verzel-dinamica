@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+
 import {
   apiErrorSchema,
   sectorListResponseSchema,
@@ -9,6 +11,8 @@ import {
   type UpdateSectorInput,
 } from "@parking/contracts";
 import { cookies } from "next/headers";
+
+import { SESSION_COOKIE } from "@/lib/server/auth";
 
 import { SESSION_COOKIE } from "@/lib/server/auth";
 
@@ -61,6 +65,12 @@ async function apiError(response: Response): Promise<SectorApiError> {
       message: "A API de setores retornou uma resposta invalida.",
     },
   });
+}
+
+/** `/v1/sectors` passou a exigir sessao, entao o BFF repassa o cookie. */
+async function cookieHeader(): Promise<string> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  return token ? `${SESSION_COOKIE}=${token}` : "";
 }
 
 async function request(path: string, init?: RequestInit): Promise<Response> {

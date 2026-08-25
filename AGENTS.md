@@ -212,8 +212,8 @@ cp .env.example .env
 set -a && source .env && set +a
 ```
 
-Do not start the full-stack environment with the frontend's default mock mode.
-Keep `BACKEND_MODE=api` when validating integration with Express and PostgreSQL.
+The BFF always calls Express. Start PostgreSQL and the API before the web app,
+otherwise authentication requests fail with a connection error.
 
 ```bash
 npm install

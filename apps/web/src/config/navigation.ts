@@ -1,4 +1,5 @@
 import {
+  CalendarCheckIcon,
   LayoutDashboardIcon,
   ListOrderedIcon,
   MapPinnedIcon,
@@ -38,6 +39,11 @@ export const navigation: NavGroup[] = [
       },
       { title: "Sectors", href: routes.sectors, icon: MapPinnedIcon },
       {
+        title: "Reservas",
+        href: routes.reservations,
+        icon: CalendarCheckIcon,
+      },
+      {
         title: "Gestão de Setores",
         href: routes.sectorManagement,
         icon: SlidersIcon,
@@ -47,7 +53,7 @@ export const navigation: NavGroup[] = [
         href: routes.waitlist,
         icon: ListOrderedIcon,
       },
-      { title: "History", href: routes.history, icon: ScrollTextIcon },
+      { title: "Histórico", href: routes.history, icon: ScrollTextIcon },
     ],
   },
 ];
