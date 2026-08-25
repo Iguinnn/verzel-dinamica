@@ -25,6 +25,7 @@ export const routes = {
   dashboard: "/user",
   sectors: "/user/setores",
   reservations: "/user/reservas",
+  waitlist: "/user/lista-de-espera",
   history: "/user/historico",
 } as const;
 

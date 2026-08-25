@@ -141,6 +141,20 @@
   .ds-page {
     @apply flex flex-1 flex-col gap-6 p-4 md:p-6;
     }
+  /* Native <select>. The option list is drawn by the OS, so it cannot be
+     styled by utility classes — these rules are what make the popup follow the
+     dark palette instead of falling back to the platform's light chrome. */
+  .ds-select {
+    color-scheme: dark;
+    }
+  .ds-select option {
+    background-color: var(--background);
+    color: var(--foreground);
+    }
+  .ds-select option:disabled {
+    color: var(--muted-foreground);
+    }
+
   /* Ambient glow used behind the login card. Pure white at low alpha, so it
      reads as light falling on the surface rather than as a tint. */
   .ds-aurora {

@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatHourlyRate } from "@/modules/sector-management/format";
+import { formatCurrency } from "@/lib/format";
 import { getOccupiedSpots } from "@/modules/sector-management/sector-status";
 import { SectorRowActions } from "@/modules/sector-management/components/sector-row-actions";
 import { SectorStatusBadge } from "@/modules/sector-management/components/sector-status-badge";
@@ -84,7 +84,7 @@ export function SectorTable({
                     {getOccupiedSpots(sector)} / {sector.capacity}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {formatHourlyRate(sector.hourlyRate)}
+                    {formatCurrency(sector.hourlyRate)}
                   </TableCell>
                   <TableCell className="text-right">
                     <SectorRowActions
