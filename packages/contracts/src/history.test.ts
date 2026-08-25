@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  reservationEventSchema,
+  reservationHistoryEventSchema,
   reservationHistorySchema,
 } from "./history.js";
 
@@ -51,7 +51,7 @@ test("rejects a history without events", () => {
 });
 
 test("rejects an unknown event type", () => {
-  const result = reservationEventSchema.safeParse(
+  const result = reservationHistoryEventSchema.safeParse(
     event({ type: "RESERVATION_ARCHIVED" }),
   );
 
@@ -59,7 +59,7 @@ test("rejects an unknown event type", () => {
 });
 
 test("rejects a promotion without the cancellation that originated it", () => {
-  const result = reservationEventSchema.safeParse(
+  const result = reservationHistoryEventSchema.safeParse(
     event({ type: "WAITLIST_PROMOTED" }),
   );
 
@@ -68,7 +68,7 @@ test("rejects a promotion without the cancellation that originated it", () => {
 });
 
 test("accepts a promotion pointing at the cancelled reservation", () => {
-  const result = reservationEventSchema.safeParse(
+  const result = reservationHistoryEventSchema.safeParse(
     event({
       type: "WAITLIST_PROMOTED",
       triggeredByReservation: {
@@ -82,7 +82,7 @@ test("accepts a promotion pointing at the cancelled reservation", () => {
 });
 
 test("rejects an event timestamp that is not an ISO instant", () => {
-  const result = reservationEventSchema.safeParse(
+  const result = reservationHistoryEventSchema.safeParse(
     event({ occurredAt: "20/08/2026 12:00" }),
   );
 
@@ -90,7 +90,7 @@ test("rejects an event timestamp that is not an ISO instant", () => {
 });
 
 test("keeps the human actor when the event has one", () => {
-  const result = reservationEventSchema.safeParse(
+  const result = reservationHistoryEventSchema.safeParse(
     event({
       type: "RESERVATION_CANCELLED",
       actor: {

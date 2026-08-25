@@ -1,17 +1,18 @@
 import type {
   EventActor,
-  ReservationEvent,
   ReservationEventType,
   ReservationHistory,
+  ReservationHistoryEvent,
   ReservationHistorySummary,
   ReservationStatus,
   ReservationSummary,
   TriggeredByReservation,
 } from "@parking/contracts";
 
+export type ReservationEvent = ReservationHistoryEvent;
+
 export type {
   EventActor,
-  ReservationEvent,
   ReservationEventType,
   ReservationHistory,
   ReservationHistorySummary,

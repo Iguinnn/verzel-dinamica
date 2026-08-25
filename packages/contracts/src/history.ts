@@ -1,21 +1,9 @@
 import { z } from "zod";
 
-/** Ciclo de vida de uma reserva, incluindo o tempo em que aguarda na fila. */
-export const reservationStatusSchema = z.enum([
-  "WAITLISTED",
-  "ACTIVE",
-  "CANCELLED",
-  "LEFT_WAITLIST",
-]);
-
-/** Eventos registrados no historico de uma reserva. */
-export const reservationEventTypeSchema = z.enum([
-  "RESERVATION_CREATED",
-  "RESERVATION_CANCELLED",
-  "WAITLIST_JOINED",
-  "WAITLIST_LEFT",
-  "WAITLIST_PROMOTED",
-]);
+import {
+  reservationEventTypeSchema,
+  reservationStatusSchema,
+} from "./reservations.js";
 
 const plateSchema = z
   .string()
@@ -38,7 +26,7 @@ export const triggeredByReservationSchema = z.object({
   plate: plateSchema,
 });
 
-export const reservationEventSchema = z
+export const reservationHistoryEventSchema = z
   .object({
     id: z.uuid(),
     reservationId: z.uuid(),
@@ -77,7 +65,7 @@ export const reservationSummarySchema = z.object({
 export const reservationHistorySchema = z.object({
   reservation: reservationSummarySchema,
   events: z
-    .array(reservationEventSchema)
+    .array(reservationHistoryEventSchema)
     .min(1, "Toda reserva tem ao menos o evento de criacao."),
 });
 
@@ -97,15 +85,13 @@ export const reservationHistoryResponseSchema = z.object({
   data: reservationHistorySchema,
 });
 
-export const reservationIdSchema = z.uuid("Identificador de reserva invalido.");
-
-export type ReservationStatus = z.infer<typeof reservationStatusSchema>;
-export type ReservationEventType = z.infer<typeof reservationEventTypeSchema>;
 export type EventActor = z.infer<typeof eventActorSchema>;
 export type TriggeredByReservation = z.infer<
   typeof triggeredByReservationSchema
 >;
-export type ReservationEvent = z.infer<typeof reservationEventSchema>;
+export type ReservationHistoryEvent = z.infer<
+  typeof reservationHistoryEventSchema
+>;
 export type ReservationSummary = z.infer<typeof reservationSummarySchema>;
 export type ReservationHistory = z.infer<typeof reservationHistorySchema>;
 export type ReservationHistorySummary = z.infer<

@@ -1,8 +1,8 @@
 import {
   reservationHistoryListResponseSchema,
   reservationHistorySchema,
-  type ReservationEvent,
   type ReservationHistory,
+  type ReservationHistoryEvent,
   type ReservationHistorySummary,
 } from "@parking/contracts";
 
@@ -24,7 +24,10 @@ import { mockReservationHistories } from "@/lib/server/history/mock-data";
  * Ordem cronologica do historico: mais antigo primeiro, com o id desempatando
  * eventos no mesmo instante. Espelha o indice `reservation_events_timeline_idx`.
  */
-function byOccurrence(a: ReservationEvent, b: ReservationEvent): number {
+function byOccurrence(
+  a: ReservationHistoryEvent,
+  b: ReservationHistoryEvent,
+): number {
   return (
     Date.parse(a.occurredAt) - Date.parse(b.occurredAt) ||
     a.id.localeCompare(b.id)
