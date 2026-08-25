@@ -8,7 +8,7 @@ import type { SessionUser } from "@/modules/auth/types";
 /**
  * Authenticated chrome: sidebar navigation plus the account topbar.
  *
- * Every route except `/login` renders inside this shell.
+ * Every route except `/login` and `/signup` renders inside this shell.
  */
 export function AppShell({
   user,

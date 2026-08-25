@@ -18,6 +18,17 @@ import {
 export const SESSION_COOKIE = "parking_session";
 const SESSION_MAX_AGE = 60 * 60 * 12;
 
+export class AuthApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "AuthApiError";
+  }
+}
+
 const mockDriver: User = {
   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   name: "Motorista Demo",
@@ -41,20 +52,27 @@ const mockPasswords: Record<string, string> = {
   [mockDriver.email]: "motorista1234",
 };
 
+const extraMockUsers: User[] = [];
+
 function apiUrl() {
   return process.env.API_URL ?? "http://localhost:3333";
 }
 
 function isMock() {
-  return (process.env.BACKEND_MODE ?? "mock") === "mock";
+  return process.env.BACKEND_MODE === "mock";
 }
 
 function parseApiError(payload: unknown, status: number): never {
   const parsed = apiErrorSchema.safeParse(payload);
-  const message = parsed.success
-    ? parsed.data.error.message
-    : `Auth API returned ${status}`;
-  throw new Error(message);
+  if (parsed.success) {
+    throw new AuthApiError(
+      status,
+      parsed.data.error.code,
+      parsed.data.error.message,
+    );
+  }
+
+  throw new AuthApiError(status, "AUTH_API_ERROR", `Auth API returned ${status}`);
 }
 
 async function parseJson(response: Response) {
@@ -62,7 +80,7 @@ async function parseJson(response: Response) {
 }
 
 function mockUsers() {
-  return [mockAdmin, mockDriver];
+  return [mockAdmin, mockDriver, ...extraMockUsers];
 }
 
 function mockUserByEmail(email: string) {
@@ -140,11 +158,26 @@ export async function registerUser(
   const body = registerUserRequestSchema.parse(input);
 
   if (isMock()) {
+    if (mockUserByEmail(body.email)) {
+      throw new AuthApiError(
+        409,
+        "EMAIL_ALREADY_EXISTS",
+        "An account with this email already exists.",
+      );
+    }
+
+    const now = new Date().toISOString();
     const user: User = {
-      ...mockDriver,
+      id: crypto.randomUUID(),
       name: body.name,
       email: body.email,
+      role: "USER",
+      createdAt: now,
+      updatedAt: now,
     };
+    extraMockUsers.push(user);
+    mockPasswords[user.email] = body.password;
+
     return {
       session: sessionResponseSchema.parse({ data: { user } }),
       token: mockToken(user.id),

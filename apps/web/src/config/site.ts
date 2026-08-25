@@ -12,6 +12,7 @@ export const site = {
  */
 export const routes = {
   login: "/login",
+  signup: "/signup",
   dashboard: "/admin",
   sectors: "/admin/setores",
   history: "/admin/historico",

@@ -1,4 +1,4 @@
-import { LockIcon, MailIcon } from "lucide-react";
+import { LockIcon, MailIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -12,21 +12,37 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { routes } from "@/config/site";
-import { signInAction } from "@/modules/auth/actions";
+import { signUpAction } from "@/modules/auth/actions";
 
-/** Credentials form for the login screen. */
-export function LoginForm() {
+/** Public form for creating a driver account. */
+export function SignUpForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
+        <CardTitle>Create account</CardTitle>
         <CardDescription>
-          Enter your credentials to access the parking console.
+          Register to reserve spots and join waiting lists.
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        <form action={signInAction} className="flex flex-col gap-4">
+        <form action={signUpAction} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="name">
+              <UserIcon className="size-3.5 text-muted-foreground" />
+              Name
+            </Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              autoComplete="name"
+              placeholder="Jane Driver"
+              maxLength={120}
+              required
+            />
+          </div>
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">
               <MailIcon className="size-3.5 text-muted-foreground" />
@@ -51,24 +67,26 @@ export function LoginForm() {
               id="password"
               name="password"
               type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
+              autoComplete="new-password"
+              placeholder="At least 8 characters"
+              minLength={8}
+              maxLength={128}
               required
             />
           </div>
 
           <Button type="submit" size="lg" className="mt-2 w-full">
-            Sign in
+            Sign up
           </Button>
         </form>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          Already have an account?{" "}
           <Link
-            href={routes.signup}
+            href={routes.login}
             className="font-medium text-foreground underline-offset-4 hover:underline"
           >
-            Sign up
+            Sign in
           </Link>
         </p>
       </CardContent>
