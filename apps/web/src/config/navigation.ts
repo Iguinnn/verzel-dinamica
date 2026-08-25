@@ -2,6 +2,7 @@ import {
   LayoutDashboardIcon,
   MapPinnedIcon,
   ScrollTextIcon,
+  SlidersIcon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,6 +36,11 @@ export const navigation: NavGroup[] = [
         exact: true,
       },
       { title: "Sectors", href: routes.sectors, icon: MapPinnedIcon },
+      {
+        title: "Gestão de Setores",
+        href: routes.sectorManagement,
+        icon: SlidersIcon,
+      },
       { title: "History", href: routes.history, icon: ScrollTextIcon },
     ],
   },

@@ -48,9 +48,12 @@ app/                          Routing only. Pages are thin and just mount a modu
     login/page.tsx            /login
   (dashboard)/                Route group rendered INSIDE the app shell.
     layout.tsx                Session guard + <AppShell>.
-    admin/page.tsx            /admin              — main screen
-    admin/setores/page.tsx    /admin/setores      — listing screen
-    admin/historico/page.tsx  /admin/historico    — history screen
+    admin/                    ADMIN ONLY — see "Access by role".
+      gestao-setores/page.tsx /admin/gestao-setores — sector management
+    user/                     Any signed-in user.
+      page.tsx                /user                 — main screen
+      setores/page.tsx        /user/setores         — listing screen
+      historico/page.tsx      /user/historico       — history screen
   api/sectors/route.ts        BFF route handler.
 
 modules/                      One folder per business capability. Own your module.
@@ -59,6 +62,13 @@ modules/                      One folder per business capability. Own your modul
     session.ts                getSessionUser() — the ONLY auth seam. See below.
     actions.ts                signInAction / signOutAction Server Actions.
     components/               login-form.tsx, login-view.tsx
+  sector-management/          ESTC-1, ADMIN ONLY. Fully mocked for now.
+    types.ts                  Re-exports the shared Sector + form draft types.
+    mock-data.ts              Seed list. Swap for the API when it exists.
+    sector-status.ts          Occupancy → livre / atencao / lotado + totals.
+    sector-form.ts            ESTC-1 rules + draft ⇄ Sector mapping.
+    format.ts                 pt-BR currency.
+    components/               view, table, row actions, form dialog, status badge, summary cards
   dashboard/components/       dashboard-view.tsx
   sectors/components/         sectors-view.tsx
   history/components/         history-view.tsx
@@ -79,12 +89,32 @@ lib/
 hooks/                        Shared React hooks (use-mobile).
 ```
 
+### Access by role
+
+Routes under `app/(dashboard)/` are split by audience:
+
+- **`admin/`** — restricted to the `ADMIN` role. Currently only
+  `/admin/gestao-setores` (the sector management screen from ESTC-1).
+  **This screen is for administrators only.**
+- **`user/`** — reachable by any signed-in user.
+
+Right now this split is **only a folder convention**. There is no role check
+yet, and the sidebar still lists every screen in a single group — that is
+deliberate, and the menu gets divided when authentication is integrated. Put a
+new screen in the folder matching its audience so the guard can later be added
+per segment (a `layout.tsx` under `admin/` asserting `user.role === "ADMIN"`)
+without moving files.
+
+Authorisation must be enforced on the server. Hiding a sidebar entry is not
+access control.
+
 ### Adding a screen
 
 1. Create `modules/<name>/components/<name>-view.tsx`.
-2. Add the path to `routes` in `config/site.ts`.
+2. Add the path to `routes` in `config/site.ts`, under the right audience.
 3. Add the sidebar entry to `config/navigation.ts`.
-4. Add a page under `app/(dashboard)/` that imports the view and nothing else.
+4. Add a page under `app/(dashboard)/admin/` or `app/(dashboard)/user/` that
+   imports the view and nothing else.
 
 No layout file needs editing. Two people adding two screens touch disjoint files.
 
@@ -197,7 +227,12 @@ npm test
 - TypeScript is strict and `noUncheckedIndexedAccess` is on — guard array and
   record access instead of asserting.
 - File names are kebab-case; components are PascalCase.
-- **UI copy is English.** Route slugs remain Portuguese (`/admin/setores`,
-  `/admin/historico`) to match the existing backlog and API — do not rename them.
-- Repository prose (README, docs) is Portuguese; code and UI are English.
+- Route slugs are Portuguese (`/user/setores`, `/admin/gestao-setores`) to match
+  the backlog and the API — do not rename them.
+- Repository prose (README, docs) is Portuguese. Identifiers, comments and file
+  names are English.
+- **UI copy is mixed and that is a known inconsistency**: the app shell, sidebar
+  and login are English, while the sector management screen is Portuguese
+  (built to match a supplied design). Pick one language for the whole product
+  before shipping; do not add more screens in a third style.
 - Run `npm run typecheck` and `npm run lint` before handing work back.
