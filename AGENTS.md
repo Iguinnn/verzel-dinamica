@@ -69,6 +69,12 @@ modules/                      One folder per business capability. Own your modul
     sector-form.ts            ESTC-1 rules + draft ⇄ Sector mapping.
     format.ts                 pt-BR currency.
     components/               view, table, row actions, form dialog, status badge, summary cards
+  waitlist/                   ESTC-4, driver-facing. Fully mocked for now.
+    types.ts                  WaitlistEntry etc., mirroring the DBML columns.
+    mock-data.ts              Seed queue + plates holding an ACTIVE reservation.
+    waitlist-queue.ts         FIFO ordering, grouping per sector, leaving.
+    waitlist-form.ts          ESTC-4 join rules + plate normalisation.
+    components/               view, sector card, join dialog
   dashboard/components/       dashboard-view.tsx
   sectors/components/         sectors-view.tsx
   history/components/         history-view.tsx
@@ -84,7 +90,10 @@ config/
 
 lib/
   utils.ts                    cn() helper.
-  server/sectors.ts           Server-side data access for the BFF.
+  format.ts                   pt-BR date and currency formatting.
+  mock/sectors.ts             Shared sector fixture. Modules must not import
+                              each other, so common mock data lives here.
+  server/                     Server-side data access for the BFF.
 
 hooks/                        Shared React hooks (use-mobile).
 ```

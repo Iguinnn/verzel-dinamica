@@ -1,10 +1,13 @@
-import type { Sector } from "@/modules/sector-management/types";
+import type { Sector } from "@parking/contracts";
 
 /**
- * Carga inicial da tela. Frontend mockado: a listagem vive em estado de
- * componente e o cadastro apenas acrescenta a este conjunto.
+ * Setores usados pelas telas ainda não integradas.
  *
- * TODO(backend): trocar por `listSectors()` quando a API da ESTC-1 existir.
+ * Fixture compartilhado entre módulos: gestão de setores e lista de espera
+ * precisam enxergar o mesmo pátio. Módulos não importam uns dos outros, então
+ * dados comuns vivem aqui.
+ *
+ * TODO(backend): substituir por `listSectors()` quando a API existir.
  */
 export const mockSectors: Sector[] = [
   {

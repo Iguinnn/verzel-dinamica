@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { PageHeader } from "@/components/common/page-header";
 import { PageShell } from "@/components/common/page-shell";
 import { Button } from "@/components/ui/button";
-import { mockSectors } from "@/modules/sector-management/mock-data";
+import { mockSectors } from "@/lib/mock/sectors";
 import {
   createSectorFromDraft,
   mergeDraftIntoSector,
