@@ -69,8 +69,12 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
 }
 
 /** Lists sectors from the Express API and validates its response contract. */
-export async function listSectors(): Promise<SectorListResponse> {
-  const response = await request("/v1/sectors");
+export async function listSectors(
+  cookieHeader?: string | null,
+): Promise<SectorListResponse> {
+  const response = await request("/v1/sectors", {
+    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+  });
   return sectorListResponseSchema.parse(await response.json());
 }
 
