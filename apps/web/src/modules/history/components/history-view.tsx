@@ -1,19 +1,23 @@
-import { HelloWorld } from "@/components/common/hello-world";
-import { PageHeader } from "@/components/common/page-header";
-import { PageShell } from "@/components/common/page-shell";
+import { getReservationHistoryPageData } from "@/lib/server/history";
+import { ReservationHistoryBrowser } from "@/modules/history/components/reservation-history-browser";
+import type { ReservationHistory } from "@/modules/history/types";
 
-/** Chronological event log of a reservation. */
-export function HistoryView() {
+/**
+ * Histórico de reservas (ESTC-5): lista as reservas e abre a linha do tempo
+ * de eventos de cada uma, da criação até a situação atual.
+ */
+export async function HistoryView() {
+  const { summaries, histories } = await getReservationHistoryPageData();
+
+  const historyById = histories.reduce<Record<string, ReservationHistory>>(
+    (byId, history) => {
+      byId[history.reservation.id] = history;
+      return byId;
+    },
+    {},
+  );
+
   return (
-    <PageShell>
-      <PageHeader
-        title="History"
-        description="Every event recorded for a reservation, oldest first."
-      />
-      <HelloWorld
-        story="ESTC-5"
-        scope="The reservation event timeline lands here."
-      />
-    </PageShell>
+    <ReservationHistoryBrowser summaries={summaries} histories={historyById} />
   );
 }

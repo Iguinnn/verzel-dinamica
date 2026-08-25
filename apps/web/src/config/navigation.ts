@@ -41,7 +41,7 @@ export const navigation: NavGroup[] = [
         href: routes.sectorManagement,
         icon: SlidersIcon,
       },
-      { title: "History", href: routes.history, icon: ScrollTextIcon },
+      { title: "Histórico", href: routes.history, icon: ScrollTextIcon },
     ],
   },
 ];
