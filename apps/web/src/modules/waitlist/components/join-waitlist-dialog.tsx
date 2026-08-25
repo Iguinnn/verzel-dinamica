@@ -13,14 +13,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { validateWaitlistDraft } from "@/modules/waitlist/waitlist-form";
-import { isSectorJoinable } from "@/modules/waitlist/waitlist-queue";
 import {
   emptyWaitlistDraft,
+  isSectorJoinable,
+  validateWaitlistDraft,
   type Sector,
   type WaitlistDraft,
   type WaitlistDraftErrors,
-  type WaitlistEntry,
 } from "@/modules/waitlist/types";
 
 type JoinWaitlistDialogProps = {
@@ -30,21 +29,18 @@ type JoinWaitlistDialogProps = {
    * só os lotados são selecionáveis — com cota livre a reserva é direta.
    */
   sectors: Sector[];
-  activePlates: string[];
-  entries: WaitlistEntry[];
+  pending?: boolean;
+  /** Mensagem devolvida pela API na última tentativa. */
+  error?: string;
   onSubmit: (draft: WaitlistDraft) => void;
 };
 
-/**
- * Formulário de entrada na lista de espera.
- *
- * Montado apenas enquanto aberto, para que cada abertura comece limpa.
- */
+/** Formulário de entrada na lista de espera. */
 export function JoinWaitlistDialog({
   onOpenChange,
   sectors,
-  activePlates,
-  entries,
+  pending = false,
+  error,
   onSubmit,
 }: JoinWaitlistDialogProps) {
   const [draft, setDraft] = React.useState<WaitlistDraft>(emptyWaitlistDraft);
@@ -58,11 +54,7 @@ export function JoinWaitlistDialog({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextErrors = validateWaitlistDraft(draft, {
-      activePlates,
-      entries,
-      now: new Date(),
-    });
+    const nextErrors = validateWaitlistDraft(draft);
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -80,8 +72,8 @@ export function JoinWaitlistDialog({
         <DialogHeader>
           <DialogTitle>Entrar na lista de espera</DialogTitle>
           <DialogDescription>
-            Entrar na fila não consome vaga. Você é contemplado
-            automaticamente quando alguém cancelar.
+            Entrar na fila não consome vaga. Você é contemplado automaticamente
+            quando alguém cancelar.
           </DialogDescription>
         </DialogHeader>
 
@@ -97,13 +89,13 @@ export function JoinWaitlistDialog({
               {/*
                 Select nativo em vez do primitivo shadcn: aquele portaliza o
                 popup para fora do Dialog, e o clique na opção é lido como
-                clique externo, fechando o diálogo inteiro. O `color-scheme:
-                dark` do design system já faz o nativo renderizar escuro.
+                clique externo, fechando o diálogo inteiro.
               */}
               <select
                 id="sectorId"
                 name="sectorId"
                 value={draft.sectorId}
+                disabled={pending}
                 aria-invalid={errors.sectorId ? true : undefined}
                 onChange={(event) =>
                   handleChange("sectorId", event.target.value)
@@ -115,15 +107,9 @@ export function JoinWaitlistDialog({
                   const isFull = isSectorJoinable(sector);
 
                   return (
-                    <option
-                      key={sector.id}
-                      value={sector.id}
-                      disabled={!isFull}
-                    >
+                    <option key={sector.id} value={sector.id} disabled={!isFull}>
                       {sector.name} —{" "}
-                      {isFull
-                        ? "lotado"
-                        : `${sector.availableSpots} vagas livres`}
+                      {isFull ? "lotado" : `${sector.availableSpots} vagas livres`}
                     </option>
                   );
                 })}
@@ -143,6 +129,7 @@ export function JoinWaitlistDialog({
                 value={draft.plate}
                 placeholder="ABC1D23"
                 maxLength={10}
+                disabled={pending}
                 autoCapitalize="characters"
                 aria-invalid={errors.plate ? true : undefined}
                 onChange={(event) => handleChange("plate", event.target.value)}
@@ -161,6 +148,7 @@ export function JoinWaitlistDialog({
                 name="expectedArrivalAt"
                 type="datetime-local"
                 value={draft.expectedArrivalAt}
+                disabled={pending}
                 aria-invalid={errors.expectedArrivalAt ? true : undefined}
                 onChange={(event) =>
                   handleChange("expectedArrivalAt", event.target.value)
@@ -175,18 +163,28 @@ export function JoinWaitlistDialog({
           </form>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Nenhum setor está lotado no momento. Com cota disponível a reserva
-            é feita direto, sem fila.
+            Nenhum setor está lotado no momento. Com cota disponível a reserva é
+            feita direto, sem fila.
           </p>
         )}
 
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            disabled={pending}
+            onClick={() => onOpenChange(false)}
+          >
             Cancelar
           </Button>
           {hasJoinableSector ? (
-            <Button type="submit" form="join-waitlist-form">
-              Entrar na fila
+            <Button type="submit" form="join-waitlist-form" disabled={pending}>
+              {pending ? "Entrando..." : "Entrar na fila"}
             </Button>
           ) : null}
         </DialogFooter>

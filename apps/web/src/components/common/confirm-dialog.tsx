@@ -21,6 +21,8 @@ type ConfirmDialogProps = {
   cancelLabel?: string;
   /** Usa o tratamento destrutivo no botão de confirmação. */
   destructive?: boolean;
+  pending?: boolean;
+  error?: string;
   onConfirm: () => void;
 };
 
@@ -38,6 +40,8 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel = "Cancelar",
   destructive = false,
+  pending = false,
+  error,
   onConfirm,
 }: ConfirmDialogProps) {
   return (
@@ -48,15 +52,26 @@ export function ConfirmDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            disabled={pending}
+            onClick={() => onOpenChange(false)}
+          >
             {cancelLabel}
           </Button>
           <Button
             variant={destructive ? "destructive" : "default"}
+            disabled={pending}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {pending ? "Processando..." : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -53,6 +53,8 @@ type SectorFormDialogProps = {
   onOpenChange: (open: boolean) => void;
   /** Ausente cadastra um setor; presente edita o setor informado. */
   sector?: Sector;
+  pending?: boolean;
+  error?: string;
   onSubmit: (draft: SectorDraft) => void;
 };
 
@@ -65,6 +67,8 @@ type SectorFormDialogProps = {
 export function SectorFormDialog({
   onOpenChange,
   sector,
+  pending = false,
+  error,
   onSubmit,
 }: SectorFormDialogProps) {
   const isEditing = sector !== undefined;
@@ -125,6 +129,7 @@ export function SectorFormDialog({
                   value={draft[field.name]}
                   placeholder={field.placeholder}
                   inputMode={field.inputMode}
+                  disabled={pending}
                   aria-invalid={error ? true : undefined}
                   aria-describedby={error ? errorId : undefined}
                   onChange={(event) =>
@@ -145,12 +150,26 @@ export function SectorFormDialog({
           })}
         </form>
 
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            disabled={pending}
+            onClick={() => onOpenChange(false)}
+          >
             Cancelar
           </Button>
-          <Button type="submit" form="sector-form">
-            {isEditing ? "Salvar alterações" : "Cadastrar setor"}
+          <Button type="submit" form="sector-form" disabled={pending}>
+            {pending
+              ? "Salvando..."
+              : isEditing
+                ? "Salvar alterações"
+                : "Cadastrar setor"}
           </Button>
         </DialogFooter>
       </DialogContent>
