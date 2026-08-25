@@ -1,0 +1,22 @@
+{
+  "name": "verzel-rotating-parking",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "contracts:build": "npm run build --workspace @parking/contracts",
+    "dev": "npm run contracts:build && node scripts/dev.mjs",
+    "dev:api": "npm run dev --workspace @parking/api",
+    "dev:web": "npm run dev --workspace @parking/web",
+    "build": "npm run contracts:build && npm run build --workspace @parking/api && npm run build --workspace @parking/web",
+    "lint": "npm run contracts:build && npm run lint --workspaces --if-present",
+    "postinstall": "npm run contracts:build",
+    "test": "npm run contracts:build && npm run test --workspaces --if-present",
+    "typecheck": "npm run contracts:build && npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.8.2"
+}
