@@ -1,22 +1,14 @@
 "use client";
 
-import {
-  CalendarCheckIcon,
-  CircleParkingIcon,
-  LayoutDashboardIcon,
-  ListOrderedIcon,
-  MapPinnedIcon,
-  TrophyIcon,
-  UsersIcon,
-} from "lucide-react";
+import { CircleParkingIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { isNavItemActive, navigation } from "@/config/navigation";
+import { routes, site } from "@/config/site";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -27,20 +19,12 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 
-const navigation = [
-  { title: "Visao geral", href: "/admin", icon: LayoutDashboardIcon },
-  { title: "Setores", href: "/admin/setores", icon: MapPinnedIcon },
-  { title: "Reservas", href: "/admin/reservas", icon: CalendarCheckIcon },
-  {
-    title: "Lista de espera",
-    href: "/admin/lista-de-espera",
-    icon: ListOrderedIcon,
-  },
-  { title: "Ranking", href: "/admin/ranking", icon: TrophyIcon },
-  { title: "Usuarios", href: "/admin/usuarios", icon: UsersIcon },
-];
-
-/** Renders the collapsible administrative navigation adapted from Shadcn Admin. */
+/**
+ * Primary navigation shown on every authenticated screen.
+ *
+ * Items come from `config/navigation`, so new story screens plug in without
+ * editing this component.
+ */
 export function AppSidebar() {
   const pathname = usePathname();
 
@@ -51,16 +35,16 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              render={<Link href="/admin" />}
-              tooltip="Estacionamento Rotativo"
+              render={<Link href={routes.dashboard} />}
+              tooltip={site.name}
             >
               <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <CircleParkingIcon />
               </span>
               <span className="flex min-w-0 flex-col">
-                <span className="truncate font-medium">Estacionamento</span>
+                <span className="truncate font-medium">{site.name}</span>
                 <span className="truncate text-xs text-muted-foreground">
-                  Painel administrativo
+                  {site.tagline}
                 </span>
               </span>
             </SidebarMenuButton>
@@ -69,20 +53,15 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Operacao</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigation.map((item) => {
-                const isActive =
-                  item.href === "/admin"
-                    ? pathname === item.href
-                    : pathname.startsWith(item.href);
-
-                return (
+        {navigation.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
-                      isActive={isActive}
+                      isActive={isNavItemActive(item, pathname)}
                       render={<Link href={item.href} />}
                       tooltip={item.title}
                     >
@@ -90,30 +69,13 @@ export function AppSidebar() {
                       <span>{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip="Administrador">
-              <Avatar size="sm">
-                <AvatarFallback>AD</AvatarFallback>
-              </Avatar>
-              <span className="flex min-w-0 flex-col">
-                <span className="truncate font-medium">Administrador</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  admin@parking.local
-                </span>
-              </span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
