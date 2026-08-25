@@ -1,9 +1,6 @@
 import { mockSectors } from "@/lib/mock/sectors";
 import type { WaitlistEntry } from "@/modules/waitlist/types";
 
-/** Id do usuário devolvido por `getSessionUser`, para marcar "Você" na fila. */
-export const MOCK_CURRENT_USER_ID = "00000000-0000-0000-0000-000000000000";
-
 const [, , fullSector] = mockSectors;
 
 /**
@@ -17,42 +14,54 @@ const [, , fullSector] = mockSectors;
 export const mockActivePlates: string[] = ["ABC1D23", "XYZ9K88"];
 
 /**
- * Fila inicial. Só o setor lotado tem gente esperando — com cota livre o
- * motorista reserva direto, então os demais setores exercitam o estado vazio.
+ * Fila inicial do setor lotado.
+ *
+ * A segunda entrada é atribuída ao usuário da sessão para que "Você" e "Sair
+ * da fila" sejam demonstráveis com qualquer conta — o id real só é conhecido
+ * depois do login, então o fixture o recebe por parâmetro.
+ *
+ * Só o setor lotado tem gente esperando: com cota livre o motorista reserva
+ * direto, então os demais setores exercitam o estado vazio.
  *
  * Datas são fixas para não divergir entre servidor e cliente na hidratação.
  *
  * TODO(backend): substituir pela consulta da fila por setor.
  */
-export const mockWaitlistEntries: WaitlistEntry[] = [
-  {
-    id: "11111111-1111-4111-8111-111111111111",
-    reservationId: "21111111-1111-4111-8111-111111111111",
-    sectorId: fullSector?.id ?? "",
-    userId: "9f8e7d6c-5b4a-4938-8271-605f4e3d2c1b",
-    plate: "RJT2A45",
-    expectedArrivalAt: "2026-08-26T13:00:00.000Z",
-    joinedAt: "2026-08-25T09:12:00.000Z",
-    status: "WAITING",
-  },
-  {
-    id: "22222222-2222-4222-8222-222222222222",
-    reservationId: "32222222-2222-4222-8222-222222222222",
-    sectorId: fullSector?.id ?? "",
-    userId: MOCK_CURRENT_USER_ID,
-    plate: "MNP4C67",
-    expectedArrivalAt: "2026-08-26T14:30:00.000Z",
-    joinedAt: "2026-08-25T09:41:00.000Z",
-    status: "WAITING",
-  },
-  {
-    id: "33333333-3333-4333-8333-333333333333",
-    reservationId: "43333333-3333-4333-8333-333333333333",
-    sectorId: fullSector?.id ?? "",
-    userId: "7c6b5a49-3827-4160-9f5e-4d3c2b1a0987",
-    plate: "QWE8F12",
-    expectedArrivalAt: "2026-08-26T16:00:00.000Z",
-    joinedAt: "2026-08-25T10:05:00.000Z",
-    status: "WAITING",
-  },
-];
+export function createMockWaitlistEntries(
+  currentUserId: string,
+): WaitlistEntry[] {
+  const sectorId = fullSector?.id ?? "";
+
+  return [
+    {
+      id: "11111111-1111-4111-8111-111111111111",
+      reservationId: "21111111-1111-4111-8111-111111111111",
+      sectorId,
+      userId: "9f8e7d6c-5b4a-4938-8271-605f4e3d2c1b",
+      plate: "RJT2A45",
+      expectedArrivalAt: "2026-08-26T13:00:00.000Z",
+      joinedAt: "2026-08-25T09:12:00.000Z",
+      status: "WAITING",
+    },
+    {
+      id: "22222222-2222-4222-8222-222222222222",
+      reservationId: "32222222-2222-4222-8222-222222222222",
+      sectorId,
+      userId: currentUserId,
+      plate: "MNP4C67",
+      expectedArrivalAt: "2026-08-26T14:30:00.000Z",
+      joinedAt: "2026-08-25T09:41:00.000Z",
+      status: "WAITING",
+    },
+    {
+      id: "33333333-3333-4333-8333-333333333333",
+      reservationId: "43333333-3333-4333-8333-333333333333",
+      sectorId,
+      userId: "7c6b5a49-3827-4160-9f5e-4d3c2b1a0987",
+      plate: "QWE8F12",
+      expectedArrivalAt: "2026-08-26T16:00:00.000Z",
+      joinedAt: "2026-08-25T10:05:00.000Z",
+      status: "WAITING",
+    },
+  ];
+}

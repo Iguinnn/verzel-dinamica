@@ -13,16 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  validateWaitlistDraft,
-} from "@/modules/waitlist/waitlist-form";
+import { validateWaitlistDraft } from "@/modules/waitlist/waitlist-form";
+import { isSectorJoinable } from "@/modules/waitlist/waitlist-queue";
 import {
   emptyWaitlistDraft,
   type Sector,
@@ -33,8 +25,11 @@ import {
 
 type JoinWaitlistDialogProps = {
   onOpenChange: (open: boolean) => void;
-  /** Apenas setores sem cota disponível aceitam entrada na fila. */
-  joinableSectors: Sector[];
+  /**
+   * Todos os setores do pátio. A lista aparece inteira para dar contexto, mas
+   * só os lotados são selecionáveis — com cota livre a reserva é direta.
+   */
+  sectors: Sector[];
   activePlates: string[];
   entries: WaitlistEntry[];
   onSubmit: (draft: WaitlistDraft) => void;
@@ -47,7 +42,7 @@ type JoinWaitlistDialogProps = {
  */
 export function JoinWaitlistDialog({
   onOpenChange,
-  joinableSectors,
+  sectors,
   activePlates,
   entries,
   onSubmit,
@@ -77,7 +72,7 @@ export function JoinWaitlistDialog({
     onSubmit(draft);
   }
 
-  const hasJoinableSector = joinableSectors.length > 0;
+  const hasJoinableSector = sectors.some(isSectorJoinable);
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
@@ -99,32 +94,40 @@ export function JoinWaitlistDialog({
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="sectorId">Setor</Label>
-              <Select
+              {/*
+                Select nativo em vez do primitivo shadcn: aquele portaliza o
+                popup para fora do Dialog, e o clique na opção é lido como
+                clique externo, fechando o diálogo inteiro. O `color-scheme:
+                dark` do design system já faz o nativo renderizar escuro.
+              */}
+              <select
+                id="sectorId"
+                name="sectorId"
                 value={draft.sectorId}
-                onValueChange={(value) =>
-                  handleChange("sectorId", String(value))
+                aria-invalid={errors.sectorId ? true : undefined}
+                onChange={(event) =>
+                  handleChange("sectorId", event.target.value)
                 }
+                className="ds-select h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30"
               >
-                <SelectTrigger
-                  id="sectorId"
-                  className="w-full"
-                  aria-invalid={errors.sectorId ? true : undefined}
-                >
-                  <SelectValue>
-                    {(value) =>
-                      joinableSectors.find((sector) => sector.id === value)
-                        ?.name ?? "Selecione o setor lotado"
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {joinableSectors.map((sector) => (
-                    <SelectItem key={sector.id} value={sector.id}>
-                      {sector.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Selecione o setor lotado</option>
+                {sectors.map((sector) => {
+                  const isFull = isSectorJoinable(sector);
+
+                  return (
+                    <option
+                      key={sector.id}
+                      value={sector.id}
+                      disabled={!isFull}
+                    >
+                      {sector.name} —{" "}
+                      {isFull
+                        ? "lotado"
+                        : `${sector.availableSpots} vagas livres`}
+                    </option>
+                  );
+                })}
+              </select>
               {errors.sectorId ? (
                 <p role="alert" className="text-xs text-destructive">
                   {errors.sectorId}

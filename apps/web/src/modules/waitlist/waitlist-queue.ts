@@ -37,13 +37,16 @@ export function groupQueuesBySector(
 }
 
 /**
- * Setores sem cota disponível.
- *
- * São os únicos que aceitam entrada na fila: com vaga livre o motorista
+ * Só setor sem cota aceita entrada na fila: com vaga livre o motorista
  * reserva direto.
  */
+export function isSectorJoinable(sector: Sector): boolean {
+  return sector.availableSpots === 0;
+}
+
+/** Setores que aceitam entrada na fila no momento. */
 export function getJoinableSectors(sectors: Sector[]): Sector[] {
-  return sectors.filter((sector) => sector.availableSpots === 0);
+  return sectors.filter(isSectorJoinable);
 }
 
 /**

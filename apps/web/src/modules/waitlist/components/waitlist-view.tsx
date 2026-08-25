@@ -9,12 +9,11 @@ import { PageShell } from "@/components/common/page-shell";
 import { Button } from "@/components/ui/button";
 import { mockSectors } from "@/lib/mock/sectors";
 import {
+  createMockWaitlistEntries,
   mockActivePlates,
-  mockWaitlistEntries,
 } from "@/modules/waitlist/mock-data";
 import { createWaitlistEntry } from "@/modules/waitlist/waitlist-form";
 import {
-  getJoinableSectors,
   groupQueuesBySector,
   leaveQueue,
 } from "@/modules/waitlist/waitlist-queue";
@@ -41,12 +40,12 @@ const closed: DialogState = { kind: "none" };
  * faz os seguintes avançarem naturalmente.
  */
 export function WaitlistView({ currentUserId }: { currentUserId: string }) {
-  const [entries, setEntries] =
-    React.useState<WaitlistEntry[]>(mockWaitlistEntries);
+  const [entries, setEntries] = React.useState<WaitlistEntry[]>(() =>
+    createMockWaitlistEntries(currentUserId),
+  );
   const [dialog, setDialog] = React.useState<DialogState>(closed);
 
   const queues = groupQueuesBySector(mockSectors, entries);
-  const joinableSectors = getJoinableSectors(mockSectors);
 
   function handleJoin(draft: WaitlistDraft) {
     const entry = createWaitlistEntry(
@@ -93,7 +92,7 @@ export function WaitlistView({ currentUserId }: { currentUserId: string }) {
       {dialog.kind === "join" ? (
         <JoinWaitlistDialog
           onOpenChange={(open) => !open && setDialog(closed)}
-          joinableSectors={joinableSectors}
+          sectors={mockSectors}
           activePlates={mockActivePlates}
           entries={entries}
           onSubmit={handleJoin}
