@@ -16,6 +16,7 @@ export const site = {
  */
 export const routes = {
   login: "/login",
+  register: "/register",
 
   /** Restricted to ADMIN. */
   sectorManagement: "/admin/gestao-setores",
