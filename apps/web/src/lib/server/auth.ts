@@ -10,7 +10,6 @@ import {
   type LoginRequest,
   type RegisterUserRequest,
   type SessionResponse,
-  type User,
   type UserListResponse,
   type UserResponse,
 } from "@parking/contracts";
@@ -18,35 +17,8 @@ import {
 export const SESSION_COOKIE = "parking_session";
 const SESSION_MAX_AGE = 60 * 60 * 12;
 
-const mockDriver: User = {
-  id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  name: "Motorista Demo",
-  email: "motorista@estacionamento.local",
-  role: "USER",
-  createdAt: "2026-08-25T12:00:00.000Z",
-  updatedAt: "2026-08-25T12:00:00.000Z",
-};
-
-const mockAdmin: User = {
-  id: "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-  name: "Administrador",
-  email: "admin@estacionamento.local",
-  role: "ADMIN",
-  createdAt: "2026-08-25T12:00:00.000Z",
-  updatedAt: "2026-08-25T12:00:00.000Z",
-};
-
-const mockPasswords: Record<string, string> = {
-  [mockAdmin.email]: "admin1234",
-  [mockDriver.email]: "motorista1234",
-};
-
 function apiUrl() {
   return process.env.API_URL ?? "http://localhost:3333";
-}
-
-function isMock() {
-  return (process.env.BACKEND_MODE ?? "mock") === "mock";
 }
 
 function parseApiError(payload: unknown, status: number): never {
@@ -59,18 +31,6 @@ function parseApiError(payload: unknown, status: number): never {
 
 async function parseJson(response: Response) {
   return response.json() as Promise<unknown>;
-}
-
-function mockUsers() {
-  return [mockAdmin, mockDriver];
-}
-
-function mockUserByEmail(email: string) {
-  return mockUsers().find((user) => user.email === email);
-}
-
-function mockToken(userId: string) {
-  return `mock.${userId}`;
 }
 
 function tokenFromSetCookies(headers: string[]) {
@@ -139,18 +99,6 @@ export async function registerUser(
 ): Promise<{ session: SessionResponse; token: string }> {
   const body = registerUserRequestSchema.parse(input);
 
-  if (isMock()) {
-    const user: User = {
-      ...mockDriver,
-      name: body.name,
-      email: body.email,
-    };
-    return {
-      session: sessionResponseSchema.parse({ data: { user } }),
-      token: mockToken(user.id),
-    };
-  }
-
   const response = await fetch(`${apiUrl()}/v1/auth/register`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -178,18 +126,6 @@ export async function login(
   input: LoginRequest,
 ): Promise<{ session: SessionResponse; token: string }> {
   const body = loginRequestSchema.parse(input);
-
-  if (isMock()) {
-    const user = mockUserByEmail(body.email);
-    if (!user || mockPasswords[user.email] !== body.password) {
-      throw new Error("Invalid email or password.");
-    }
-
-    return {
-      session: sessionResponseSchema.parse({ data: { user } }),
-      token: mockToken(user.id),
-    };
-  }
 
   const response = await fetch(`${apiUrl()}/v1/auth/login`, {
     method: "POST",
@@ -219,20 +155,6 @@ export async function currentUser(
 ): Promise<UserResponse> {
   const token = tokenFromCookieHeader(cookieHeader);
 
-  if (isMock()) {
-    if (!token?.startsWith("mock.")) {
-      throw new Error("Unauthenticated.");
-    }
-
-    const userId = token.slice("mock.".length);
-    const user = mockUsers().find((item) => item.id === userId);
-    if (!user) {
-      throw new Error("Unauthenticated.");
-    }
-
-    return userResponseSchema.parse({ data: user });
-  }
-
   const response = await fetch(`${apiUrl()}/v1/auth/me`, {
     headers: token ? { cookie: `${SESSION_COOKIE}=${token}` } : undefined,
     cache: "no-store",
@@ -249,18 +171,6 @@ export async function currentUser(
 export async function listUsers(
   cookieHeader?: string | null,
 ): Promise<UserListResponse> {
-  if (isMock()) {
-    const token = tokenFromCookieHeader(cookieHeader);
-    const { data: actor } = await currentUser(
-      token ? `${SESSION_COOKIE}=${token}` : cookieHeader,
-    );
-    if (actor.role !== "ADMIN") {
-      throw new Error("Only administrators can access this resource.");
-    }
-
-    return userListResponseSchema.parse({ data: mockUsers() });
-  }
-
   const response = await fetch(`${apiUrl()}/v1/users`, {
     headers: cookieHeader ? { cookie: cookieHeader } : undefined,
     cache: "no-store",

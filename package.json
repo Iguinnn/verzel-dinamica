@@ -13,7 +13,7 @@
     "dev": "npm run contracts:build && npm run dev:prepare && node scripts/dev.mjs",
     "dev:api": "DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/rotating_parking} npm run dev --workspace @parking/api",
     "dev:prepare": "npm run db:up && npm run db:migrate",
-    "dev:web": "npm run dev --workspace @parking/web",
+    "dev:web": "PORT=${WEB_PORT:-3000} npm run dev --workspace @parking/web",
     "build": "npm run contracts:build && npm run build --workspace @parking/api && npm run build --workspace @parking/web",
     "lint": "npm run contracts:build && npm run lint --workspaces --if-present",
     "postinstall": "npm run contracts:build",
