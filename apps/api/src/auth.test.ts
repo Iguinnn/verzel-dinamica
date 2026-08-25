@@ -13,19 +13,40 @@ import type { Express } from "express";
 
 import { hashPassword } from "./auth/password.js";
 import { createApp } from "./app.js";
+import type { SectorRepository } from "./repositories/sectors.js";
 import { createMemoryUserRepository } from "./repositories/users.js";
 
 const sessionSecret = "test-session-secret";
+
+function createEmptySectorRepository(): SectorRepository {
+  return {
+    async list() {
+      return { data: [] };
+    },
+    async findById() {
+      return null;
+    },
+    async create(input) {
+      return {
+        id: crypto.randomUUID(),
+        ...input,
+        availableSpots: input.capacity,
+      };
+    },
+    async update() {
+      return { kind: "not_found" };
+    },
+    async delete() {
+      return "not_found";
+    },
+  };
+}
 
 function createTestApp() {
   return createApp({
     sessionSecret,
     users: createMemoryUserRepository(),
-    sectors: {
-      async list() {
-        return { data: [] };
-      },
-    },
+    sectors: createEmptySectorRepository(),
   });
 }
 
@@ -202,11 +223,7 @@ test("blocks USER on admin routes and allows ADMIN", async (context) => {
   const now = new Date();
   const adminApp = createApp({
     sessionSecret,
-    sectors: {
-      async list() {
-        return { data: [] };
-      },
-    },
+    sectors: createEmptySectorRepository(),
     users: createMemoryUserRepository([
       {
         id: adminId,
