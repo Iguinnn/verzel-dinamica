@@ -45,7 +45,7 @@ healthcheck, aplica as migrations pendentes e inicia o frontend e a API no mesmo
 terminal. O frontend fica em `http://localhost:3000` e a API em
 `http://localhost:3333`.
 
-O BFF usa `BACKEND_MODE=mock` para devolver fixtures locais ou `BACKEND_MODE=live` para consultar o Express. Os dois modos validam a resposta com o mesmo contrato compartilhado.
+O BFF do Next.js consulta o Express por `API_URL` e valida as respostas com o contrato compartilhado.
 
 ## Documentacao
 
