@@ -194,6 +194,18 @@ already exists.
 
 Run from the repository root.
 
+Use the root `.env.example` as the canonical local environment template. Before
+running the API, web app, migrations, seeds, or integration tests, create and
+load `.env` in the current shell:
+
+```bash
+cp .env.example .env
+set -a && source .env && set +a
+```
+
+Do not start the full-stack environment with the frontend's default mock mode.
+Keep `BACKEND_MODE=api` when validating integration with Express and PostgreSQL.
+
 ```bash
 npm install
 ```
