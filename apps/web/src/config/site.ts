@@ -23,6 +23,7 @@ export const routes = {
   /** Available to any signed-in user. */
   dashboard: "/user",
   sectors: "/user/setores",
+  reservations: "/user/reservas",
   history: "/user/historico",
 } as const;
 

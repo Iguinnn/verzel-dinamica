@@ -1,4 +1,5 @@
 import {
+  CalendarCheckIcon,
   LayoutDashboardIcon,
   MapPinnedIcon,
   ScrollTextIcon,
@@ -36,6 +37,11 @@ export const navigation: NavGroup[] = [
         exact: true,
       },
       { title: "Sectors", href: routes.sectors, icon: MapPinnedIcon },
+      {
+        title: "Reservas",
+        href: routes.reservations,
+        icon: CalendarCheckIcon,
+      },
       {
         title: "Gestão de Setores",
         href: routes.sectorManagement,
