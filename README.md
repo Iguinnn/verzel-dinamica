@@ -12,7 +12,10 @@ O produto cobre cinco historias:
 4. lista de espera com promocao automatica;
 5. historico completo das alteracoes de uma reserva.
 
-O sistema possui login por e-mail e senha. Motoristas acessam somente as proprias reservas, filas e historicos. Administradores gerenciam setores e acessam a visao operacional completa e o ranking.
+O sistema possui login por e-mail e senha. Motoristas acessam somente as proprias
+reservas e historicos. A fila de cada setor mostra placas mascaradas e permite
+que o motorista altere somente a propria entrada. Administradores gerenciam
+setores e acessam a visao operacional completa e o ranking.
 
 ## Stack acordada
 
@@ -68,6 +71,27 @@ npm run build
 ```
 
 Use `npm run dev:web` e `npm run dev:api` para iniciar os servicos separadamente.
+
+## Lista de espera no backend
+
+As rotas abaixo exigem uma sessao autenticada:
+
+- `POST /v1/sectors/:sectorId/waitlist` cria a reserva `WAITLISTED`, a entrada
+  `WAITING` e os eventos de criacao e entrada em uma unica transacao.
+- `GET /v1/sectors/:sectorId/waitlist` lista a fila em ordem FIFO, com placas
+  mascaradas e a indicacao `isMine`.
+- `DELETE /v1/waitlist/:id` registra a saida voluntaria do proprio motorista
+  sem apagar o historico.
+
+O cliente nao envia `reservationId`; a API cria a reserva que satisfaz a FK. A
+promocao automatica sera integrada ao futuro fluxo de cancelamento de reservas.
+
+O teste de integracao do repositorio usa o PostgreSQL local:
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/rotating_parking \
+  npm run test:integration --workspace @parking/api
+```
 
 ## Ordem de implementacao
 

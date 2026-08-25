@@ -1,5 +1,6 @@
 import {
   createSectorSchema,
+  joinWaitlistSchema,
   loginRequestSchema,
   registerUserRequestSchema,
   sectorIdSchema,
@@ -9,6 +10,9 @@ import {
   updateSectorSchema,
   userListResponseSchema,
   userResponseSchema,
+  waitlistEntryIdSchema,
+  waitlistEntryResponseSchema,
+  waitlistListResponseSchema,
   type User,
 } from "@parking/contracts";
 import type { ZodError } from "zod";
@@ -25,6 +29,7 @@ import { sendError } from "./http.js";
 import type { SectorRepository } from "./repositories/sectors.js";
 import type { UserRepository } from "./repositories/users.js";
 import { toPublicUser } from "./repositories/users.js";
+import type { WaitlistRepository } from "./repositories/waitlist.js";
 
 function authValidationMessage(error: ZodError): string {
   const field = error.issues[0]?.path[0];
@@ -63,10 +68,12 @@ function sessionBody(user: User) {
 export function createApp({
   sectors,
   users,
+  waitlist,
   sessionSecret,
 }: {
   sectors: SectorRepository;
   users: UserRepository;
+  waitlist: WaitlistRepository;
   sessionSecret: string;
 }) {
   const app = express();
@@ -412,6 +419,218 @@ export function createApp({
             message: "Nao foi possivel excluir o setor.",
           },
         });
+      }
+    },
+  );
+
+  app.post(
+    "/v1/sectors/:sectorId/waitlist",
+    requireAuth,
+    async (request, response) => {
+      const sectorId = sectorIdSchema.safeParse(request.params.sectorId);
+      const input = joinWaitlistSchema.safeParse(request.body);
+
+      if (!sectorId.success) {
+        sendError(
+          response,
+          400,
+          "INVALID_SECTOR_ID",
+          sectorId.error.issues[0]?.message ?? "Identificador de setor invalido.",
+        );
+        return;
+      }
+
+      if (!input.success) {
+        sendError(
+          response,
+          400,
+          "INVALID_WAITLIST_REQUEST",
+          input.error.issues[0]?.message ?? "Dados da fila invalidos.",
+        );
+        return;
+      }
+
+      if (!request.currentUser) {
+        sendError(
+          response,
+          401,
+          "UNAUTHENTICATED",
+          "E necessario estar autenticado.",
+        );
+        return;
+      }
+
+      try {
+        const result = await waitlist.join({
+          ...input.data,
+          sectorId: sectorId.data,
+          userId: request.currentUser.id,
+        });
+
+        if (result.kind === "sector_not_found") {
+          sendError(response, 404, "SECTOR_NOT_FOUND", "Setor nao encontrado.");
+          return;
+        }
+        if (result.kind === "sector_has_availability") {
+          sendError(
+            response,
+            409,
+            "SECTOR_HAS_AVAILABILITY",
+            "O setor ainda possui vagas disponiveis.",
+          );
+          return;
+        }
+        if (result.kind === "active_plate") {
+          sendError(
+            response,
+            409,
+            "PLATE_HAS_ACTIVE_RESERVATION",
+            "A placa ja possui uma reserva ativa.",
+          );
+          return;
+        }
+        if (result.kind === "duplicate_entry") {
+          sendError(
+            response,
+            409,
+            "WAITLIST_ENTRY_EXISTS",
+            "A placa ja esta na fila deste setor.",
+          );
+          return;
+        }
+        if (result.kind === "arrival_in_past") {
+          sendError(
+            response,
+            400,
+            "EXPECTED_ARRIVAL_IN_PAST",
+            "A chegada prevista deve estar no futuro.",
+          );
+          return;
+        }
+
+        response
+          .status(201)
+          .json(waitlistEntryResponseSchema.parse({ data: result.entry }));
+      } catch {
+        sendError(
+          response,
+          500,
+          "WAITLIST_JOIN_FAILED",
+          "Nao foi possivel entrar na fila.",
+        );
+      }
+    },
+  );
+
+  app.get(
+    "/v1/sectors/:sectorId/waitlist",
+    requireAuth,
+    async (request, response) => {
+      const sectorId = sectorIdSchema.safeParse(request.params.sectorId);
+
+      if (!sectorId.success) {
+        sendError(
+          response,
+          400,
+          "INVALID_SECTOR_ID",
+          sectorId.error.issues[0]?.message ?? "Identificador de setor invalido.",
+        );
+        return;
+      }
+
+      if (!request.currentUser) {
+        sendError(
+          response,
+          401,
+          "UNAUTHENTICATED",
+          "E necessario estar autenticado.",
+        );
+        return;
+      }
+
+      try {
+        const result = await waitlist.list(
+          sectorId.data,
+          request.currentUser.id,
+        );
+
+        if (result.kind === "sector_not_found") {
+          sendError(response, 404, "SECTOR_NOT_FOUND", "Setor nao encontrado.");
+          return;
+        }
+
+        response.json(waitlistListResponseSchema.parse(result.response));
+      } catch {
+        sendError(
+          response,
+          500,
+          "WAITLIST_QUERY_FAILED",
+          "Nao foi possivel consultar a fila.",
+        );
+      }
+    },
+  );
+
+  app.delete(
+    "/v1/waitlist/:id",
+    requireAuth,
+    async (request, response) => {
+      const entryId = waitlistEntryIdSchema.safeParse(request.params.id);
+
+      if (!entryId.success) {
+        sendError(
+          response,
+          400,
+          "INVALID_WAITLIST_ENTRY_ID",
+          entryId.error.issues[0]?.message ??
+            "Identificador da entrada na fila invalido.",
+        );
+        return;
+      }
+
+      if (!request.currentUser) {
+        sendError(
+          response,
+          401,
+          "UNAUTHENTICATED",
+          "E necessario estar autenticado.",
+        );
+        return;
+      }
+
+      try {
+        const result = await waitlist.leave(
+          entryId.data,
+          request.currentUser.id,
+        );
+
+        if (result === "not_found") {
+          sendError(
+            response,
+            404,
+            "WAITLIST_ENTRY_NOT_FOUND",
+            "Entrada na fila nao encontrada.",
+          );
+          return;
+        }
+        if (result === "not_waiting") {
+          sendError(
+            response,
+            409,
+            "WAITLIST_ENTRY_NOT_WAITING",
+            "A entrada nao esta mais aguardando na fila.",
+          );
+          return;
+        }
+
+        response.status(204).send();
+      } catch {
+        sendError(
+          response,
+          500,
+          "WAITLIST_LEAVE_FAILED",
+          "Nao foi possivel sair da fila.",
+        );
       }
     },
   );

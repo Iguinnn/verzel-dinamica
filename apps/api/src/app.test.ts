@@ -13,6 +13,7 @@ import { sessionCookie, signSession } from "./auth/session.js";
 import { createApp } from "./app.js";
 import { createMemoryUserRepository } from "./repositories/users.js";
 import type { SectorRepository } from "./repositories/sectors.js";
+import type { WaitlistRepository } from "./repositories/waitlist.js";
 
 const sessionSecret = "test-session-secret";
 const adminId = "11111111-1111-4111-8111-111111111111";
@@ -85,6 +86,20 @@ function createFakeRepository(): SectorRepository {
   };
 }
 
+function createEmptyWaitlistRepository(): WaitlistRepository {
+  return {
+    async join() {
+      return { kind: "sector_not_found" };
+    },
+    async list() {
+      return { kind: "sector_not_found" };
+    },
+    async leave() {
+      return "not_found";
+    },
+  };
+}
+
 function cookieFor(userId: string) {
   return sessionCookie(signSession(userId, sessionSecret)).split(";", 1)[0] ?? "";
 }
@@ -114,6 +129,7 @@ async function startApp(repository: SectorRepository) {
   const server = createApp({
     sectors: repository,
     users,
+    waitlist: createEmptyWaitlistRepository(),
     sessionSecret,
   }).listen(0);
   await new Promise<void>((resolve) => server.once("listening", resolve));
