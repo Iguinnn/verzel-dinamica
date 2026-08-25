@@ -12,7 +12,7 @@
     "dev": "tsx watch src/index.ts",
     "lint": "tsc --noEmit",
     "start": "node dist/index.js",
-    "test": "tsx --test src/app.test.ts src/auth.test.ts",
+    "test": "tsx --test src/app.test.ts src/auth.test.ts src/reservations.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 import { createApp } from "./app.js";
 import { createDatabaseClient } from "./db/client.js";
+import { createReservationRepository } from "./repositories/reservations.js";
 import { createSectorRepository } from "./repositories/sectors.js";
 import { createUserRepository } from "./repositories/users.js";
 
@@ -14,6 +15,7 @@ const { db, pool } = createDatabaseClient();
 const app = createApp({
   sectors: createSectorRepository(db),
   users: createUserRepository(db),
+  reservations: createReservationRepository(db),
   sessionSecret,
 });
 
