@@ -1,7 +1,4 @@
-import {
-  listReservationHistories,
-  listReservationHistorySummaries,
-} from "@/lib/server/history";
+import { getReservationHistoryPageData } from "@/lib/server/history";
 import { ReservationHistoryBrowser } from "@/modules/history/components/reservation-history-browser";
 import type { ReservationHistory } from "@/modules/history/types";
 
@@ -10,10 +7,7 @@ import type { ReservationHistory } from "@/modules/history/types";
  * de eventos de cada uma, da criação até a situação atual.
  */
 export async function HistoryView() {
-  const [summaries, histories] = await Promise.all([
-    listReservationHistorySummaries(),
-    listReservationHistories(),
-  ]);
+  const { summaries, histories } = await getReservationHistoryPageData();
 
   const historyById = histories.reduce<Record<string, ReservationHistory>>(
     (byId, history) => {

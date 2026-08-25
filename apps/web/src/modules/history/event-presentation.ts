@@ -7,7 +7,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { ReservationEvent, ReservationEventType } from "@/modules/history/types";
+import type { ReservationEventType } from "@/modules/history/types";
 
 /**
  * Apresentação de cada tipo de evento: rótulo, ícone e o tom semântico do
@@ -47,18 +47,4 @@ const eventPresentation: Record<
 
 export function getEventPresentation(type: ReservationEventType) {
   return eventPresentation[type];
-}
-
-/** Descreve o que aconteceu no evento, incluindo a origem de uma promoção. */
-export function describeEvent(event: ReservationEvent): string {
-  if (event.type === "WAITLIST_PROMOTED" && event.triggeredByReservation) {
-    return `Promovida para reserva ativa após o cancelamento da reserva ${event.triggeredByReservation.plate}.`;
-  }
-
-  return getEventPresentation(event.type).label + ".";
-}
-
-/** Nome do autor humano do evento, ou "Automático" quando não houver um. */
-export function describeActor(event: ReservationEvent): string {
-  return event.actor?.name ?? "Automático";
 }

@@ -1,23 +1,25 @@
 import {
   reservationHistoryListResponseSchema,
   reservationHistorySchema,
+  type Reservation,
   type ReservationHistory,
   type ReservationHistoryEvent,
   type ReservationHistorySummary,
+  type Sector,
 } from "@parking/contracts";
 
-import { mockReservationHistories } from "@/lib/server/history/mock-data";
+import {
+  listReservationEvents,
+  listReservations,
+} from "@/lib/server/reservations";
+import { listSectors } from "@/lib/server/sectors";
 
 /**
  * Acesso server-side ao historico de reservas (ESTC-5).
  *
- * Hoje le o mock de `mock-data.ts` e valida contra os contratos compartilhados,
- * de modo que o dado mockado nunca saia do formato que a API vai devolver.
- *
- * TODO(backend): trocar o corpo destas funcoes por `fetch` em
- * `GET /v1/reservations` e `GET /v1/reservations/:id/events`, seguindo o
- * mapeamento de erro de `lib/server/sectors.ts`, e filtrar por sessao
- * (USER ve apenas as proprias reservas, ADMIN ve todas).
+ * Combina as reservas visiveis para a sessao com seus setores e eventos. A API
+ * aplica a autorizacao: USER recebe apenas as proprias reservas e ADMIN recebe
+ * todas.
  */
 
 /**
@@ -41,6 +43,21 @@ function sortEvents(history: ReservationHistory): ReservationHistory {
   };
 }
 
+function reservationSummary(
+  reservation: Reservation,
+  sector: Sector,
+) {
+  return {
+    id: reservation.id,
+    plate: reservation.plate,
+    sectorId: reservation.sectorId,
+    sectorName: sector.name,
+    status: reservation.status,
+    expectedArrivalAt: reservation.expectedArrivalAt,
+    createdAt: reservation.createdAt,
+  };
+}
+
 function summarize(
   history: ReservationHistory,
 ): ReservationHistorySummary | null {
@@ -59,38 +76,51 @@ function summarize(
   };
 }
 
-/** Historicos completos, com os eventos de cada reserva em ordem cronologica. */
-export async function listReservationHistories(): Promise<ReservationHistory[]> {
-  return mockReservationHistories.map((history) =>
-    sortEvents(reservationHistorySchema.parse(history)),
-  );
-}
+export type ReservationHistoryPageData = {
+  histories: ReservationHistory[];
+  summaries: ReservationHistorySummary[];
+};
 
-/**
- * Linhas da listagem, da reserva com atividade mais recente para a mais antiga.
- * A placa desempata para a ordem nao depender da ordem do array de origem.
- */
-export async function listReservationHistorySummaries(): Promise<
-  ReservationHistorySummary[]
+/** Carrega a listagem e os historicos completos diretamente da API Express. */
+export async function getReservationHistoryPageData(): Promise<
+  ReservationHistoryPageData
 > {
-  const summaries = (await listReservationHistories())
+  const [{ data: reservations }, { data: sectors }] = await Promise.all([
+    listReservations(),
+    listSectors(),
+  ]);
+  const sectorsById = new Map(sectors.map((sector) => [sector.id, sector]));
+
+  const histories = await Promise.all(
+    reservations.map(async (reservation) => {
+      const sector = sectorsById.get(reservation.sectorId);
+
+      if (!sector) {
+        throw new Error(`SECTOR_NOT_FOUND_FOR_RESERVATION:${reservation.id}`);
+      }
+
+      const { data: events } = await listReservationEvents(reservation.id);
+
+      return sortEvents(
+        reservationHistorySchema.parse({
+          reservation: reservationSummary(reservation, sector),
+          events,
+        }),
+      );
+    }),
+  );
+
+  const summaries = histories
     .map(summarize)
     .filter((summary): summary is ReservationHistorySummary => summary !== null);
 
-  return reservationHistoryListResponseSchema.parse({
+  const parsedSummaries = reservationHistoryListResponseSchema.parse({
     data: summaries.sort(
       (a, b) =>
         Date.parse(b.lastEventAt) - Date.parse(a.lastEventAt) ||
         a.reservation.plate.localeCompare(b.reservation.plate),
     ),
   }).data;
-}
 
-/** Historico de uma reserva. `null` quando o identificador nao existe. */
-export async function getReservationHistory(
-  id: string,
-): Promise<ReservationHistory | null> {
-  const histories = await listReservationHistories();
-
-  return histories.find((history) => history.reservation.id === id) ?? null;
+  return { histories, summaries: parsedSummaries };
 }

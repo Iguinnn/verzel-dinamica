@@ -1,9 +1,8 @@
-import { EllipsisVerticalIcon, HistoryIcon, ListFilterIcon } from "lucide-react";
+import { HistoryIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardHeader,
   CardTitle,

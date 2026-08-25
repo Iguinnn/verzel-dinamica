@@ -1,4 +1,4 @@
-import { describeEvent, getEventPresentation } from "@/modules/history/event-presentation";
+import { getEventPresentation } from "@/modules/history/event-presentation";
 import { formatEventDateTime } from "@/modules/history/format";
 import type { ReservationEvent } from "@/modules/history/types";
 
@@ -44,13 +44,11 @@ export function HistoryTimeline({ events }: { events: ReservationEvent[] }) {
                 {formatEventDateTime(event.occurredAt)}
               </span>
               <span className="text-sm font-medium">{label}</span>
-              {event.type === "WAITLIST_PROMOTED" ? (
-                <span className="text-sm text-muted-foreground">
-                  {describeEvent(event)}
-                </span>
-              ) : null}
+              <span className="text-sm text-muted-foreground">
+                {event.description}
+              </span>
               <span className="text-xs text-muted-foreground">
-                {event.actor ? `Por ${event.actor.name}` : "Evento automático"}
+                {event.actorUserId ? "Ação do usuário" : "Evento automático"}
               </span>
             </div>
           </li>

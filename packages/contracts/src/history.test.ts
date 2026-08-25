@@ -15,9 +15,10 @@ function event(overrides: Record<string, unknown> = {}) {
     reservationId,
     type: "RESERVATION_CREATED",
     occurredAt: "2026-08-20T12:00:00.000Z",
-    actor: null,
-    triggeredByReservation: null,
+    actorUserId: null,
+    triggeredByReservationId: null,
     details: null,
+    description: "Reserva criada para a placa ABC1D23.",
     ...overrides,
   };
 }
@@ -64,17 +65,18 @@ test("rejects a promotion without the cancellation that originated it", () => {
   );
 
   assert.equal(result.success, false);
-  assert.deepEqual(result.error?.issues[0]?.path, ["triggeredByReservation"]);
+  assert.deepEqual(result.error?.issues[0]?.path, [
+    "triggeredByReservationId",
+  ]);
 });
 
 test("accepts a promotion pointing at the cancelled reservation", () => {
   const result = reservationHistoryEventSchema.safeParse(
     event({
       type: "WAITLIST_PROMOTED",
-      triggeredByReservation: {
-        id: "3c4d5e6f-7a8b-4c9d-8e1f-2a3b4c5d6e7f",
-        plate: "DEF2G45",
-      },
+      triggeredByReservationId: "3c4d5e6f-7a8b-4c9d-8e1f-2a3b4c5d6e7f",
+      description:
+        "Placa ABC1D23 promovida apos o cancelamento 3c4d5e6f-7a8b-4c9d-8e1f-2a3b4c5d6e7f.",
     }),
   );
 
@@ -89,17 +91,18 @@ test("rejects an event timestamp that is not an ISO instant", () => {
   assert.equal(result.success, false);
 });
 
-test("keeps the human actor when the event has one", () => {
+test("keeps the human actor identifier when the event has one", () => {
   const result = reservationHistoryEventSchema.safeParse(
     event({
       type: "RESERVATION_CANCELLED",
-      actor: {
-        id: "4d5e6f7a-8b9c-4d0e-9f1a-2b3c4d5e6f7a",
-        name: "Ana Souza",
-      },
+      actorUserId: "4d5e6f7a-8b9c-4d0e-9f1a-2b3c4d5e6f7a",
+      description: "Reserva da placa ABC1D23 cancelada.",
     }),
   );
 
   assert.equal(result.success, true);
-  assert.equal(result.data?.actor?.name, "Ana Souza");
+  assert.equal(
+    result.data?.actorUserId,
+    "4d5e6f7a-8b9c-4d0e-9f1a-2b3c4d5e6f7a",
+  );
 });
