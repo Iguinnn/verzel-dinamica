@@ -6,9 +6,9 @@ import {
   sectorApiErrorResponse,
 } from "@/lib/server/sectors";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    return Response.json(await listSectors(request.headers.get("cookie")));
+    return Response.json(await listSectors());
   } catch (error) {
     return sectorApiErrorResponse(error);
   }

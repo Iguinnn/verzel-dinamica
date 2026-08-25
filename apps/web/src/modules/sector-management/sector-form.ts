@@ -1,4 +1,5 @@
-import { getOccupiedSpots } from "@/modules/sector-management/sector-status";
+import type { CreateSectorInput } from "@parking/contracts";
+
 import type {
   Sector,
   SectorDraft,
@@ -8,8 +9,8 @@ import type {
 /**
  * Regras de cadastro da ESTC-1.
  *
- * TODO(backend): quando a API de setores existir, mover estas regras para
- * `@parking/contracts` e validar com o mesmo schema nos dois lados.
+ * A API repete a validação com os schemas de `@parking/contracts`; estas
+ * mensagens mantêm o retorno por campo antes do envio.
  */
 export const sectorFormMessages = {
   nameRequired: "Informe o nome do setor.",
@@ -76,37 +77,12 @@ export function toSectorDraft(sector: Sector): SectorDraft {
   };
 }
 
-/**
- * Monta um novo setor a partir de um rascunho válido.
- *
- * Um setor recém-cadastrado começa com a cota inteira disponível.
- */
-export function createSectorFromDraft(draft: SectorDraft): Sector {
-  const capacity = parseNumber(draft.capacity);
-
+/** Converte um rascunho válido para o contrato enviado ao BFF. */
+export function toSectorInput(draft: SectorDraft): CreateSectorInput {
   return {
-    id: crypto.randomUUID(),
     name: draft.name.trim(),
     location: draft.location.trim(),
-    capacity,
-    availableSpots: capacity,
-    hourlyRate: parseNumber(draft.hourlyRate),
-  };
-}
-
-/** Aplica um rascunho válido a um setor existente, preservando as ocupadas. */
-export function mergeDraftIntoSector(
-  sector: Sector,
-  draft: SectorDraft,
-): Sector {
-  const capacity = parseNumber(draft.capacity);
-
-  return {
-    ...sector,
-    name: draft.name.trim(),
-    location: draft.location.trim(),
-    capacity,
-    availableSpots: capacity - getOccupiedSpots(sector),
+    capacity: parseNumber(draft.capacity),
     hourlyRate: parseNumber(draft.hourlyRate),
   };
 }
