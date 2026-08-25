@@ -155,15 +155,10 @@ server, not by hiding UI elements.
 
 ## BFF
 
-`apps/web` talks to Express through `lib/server/sectors.ts`, switched by
-`BACKEND_MODE`:
-
-- `mock` (default) — contract-valid fixtures, no database needed.
-- `live` — fetches `API_URL`.
-
-Both modes validate through the same Zod schema, so a screen built against mocks
-works against the real API unchanged. Preserve this pattern when adding data
-access.
+`apps/web` talks to Express through `lib/server/sectors.ts` using `API_URL`.
+The BFF validates successful responses and API errors with the shared Zod
+contracts. Do not add a second in-memory implementation when the Express route
+already exists.
 
 ## Commands
 

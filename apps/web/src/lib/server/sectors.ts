@@ -1,41 +1,109 @@
 import {
+  apiErrorSchema,
   sectorListResponseSchema,
+  sectorResponseSchema,
+  type ApiError,
+  type CreateSectorInput,
+  type Sector,
   type SectorListResponse,
+  type UpdateSectorInput,
 } from "@parking/contracts";
 
-const sectorListMock: SectorListResponse = {
-  data: [
-    {
-      id: "ed31bd55-cfb5-488e-bf63-14687db7390b",
-      name: "Setor Central",
-      location: "Entrada principal",
-      capacity: 12,
-      availableSpots: 4,
-      hourlyRate: 8,
-    },
-    {
-      id: "03aa526e-c7e6-4f66-bf51-a12a87d59c95",
-      name: "Setor Norte",
-      location: "Proximo a praca",
-      capacity: 8,
-      availableSpots: 0,
-      hourlyRate: 6.5,
-    },
-  ],
-};
+export class SectorApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly payload: ApiError,
+  ) {
+    super(payload.error.message);
+  }
+}
 
-/** Returns sectors from a contract-valid mock or from the Express API. */
-export async function listSectors(): Promise<SectorListResponse> {
-  if ((process.env.BACKEND_MODE ?? "mock") === "mock") {
-    return sectorListResponseSchema.parse(sectorListMock);
+/** Converts an Express API failure into the BFF error response contract. */
+export function sectorApiErrorResponse(error: unknown): Response {
+  if (error instanceof SectorApiError) {
+    return Response.json(error.payload, { status: error.status });
   }
 
-  const apiUrl = process.env.API_URL ?? "http://localhost:3333";
-  const response = await fetch(`${apiUrl}/v1/sectors`, { cache: "no-store" });
+  return Response.json(
+    {
+      error: {
+        code: "SECTOR_API_UNAVAILABLE",
+        message: "Nao foi possivel acessar a API de setores.",
+      },
+    },
+    { status: 502 },
+  );
+}
+
+function apiUrl(): string {
+  return process.env.API_URL ?? "http://localhost:3333";
+}
+
+async function apiError(response: Response): Promise<SectorApiError> {
+  const body: unknown = await response.json().catch(() => undefined);
+  const parsed = apiErrorSchema.safeParse(body);
+
+  if (parsed.success) {
+    return new SectorApiError(response.status, parsed.data);
+  }
+
+  return new SectorApiError(502, {
+    error: {
+      code: "INVALID_SECTOR_API_RESPONSE",
+      message: "A API de setores retornou uma resposta invalida.",
+    },
+  });
+}
+
+async function request(path: string, init?: RequestInit): Promise<Response> {
+  const response = await fetch(`${apiUrl()}${path}`, {
+    cache: "no-store",
+    ...init,
+  });
 
   if (!response.ok) {
-    throw new Error(`Sector API returned ${response.status}`);
+    throw await apiError(response);
   }
 
+  return response;
+}
+
+/** Lists sectors from the Express API and validates its response contract. */
+export async function listSectors(): Promise<SectorListResponse> {
+  const response = await request("/v1/sectors");
   return sectorListResponseSchema.parse(await response.json());
+}
+
+/** Reads one sector from the Express API. */
+export async function getSector(id: string): Promise<Sector> {
+  const response = await request(`/v1/sectors/${id}`);
+  return sectorResponseSchema.parse(await response.json()).data;
+}
+
+/** Creates one sector through the Express API. */
+export async function createSector(input: CreateSectorInput): Promise<Sector> {
+  const response = await request("/v1/sectors", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return sectorResponseSchema.parse(await response.json()).data;
+}
+
+/** Updates one sector through the Express API. */
+export async function updateSector(
+  id: string,
+  input: UpdateSectorInput,
+): Promise<Sector> {
+  const response = await request(`/v1/sectors/${id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return sectorResponseSchema.parse(await response.json()).data;
+}
+
+/** Deletes one sector through the Express API. */
+export async function deleteSector(id: string): Promise<void> {
+  await request(`/v1/sectors/${id}`, { method: "DELETE" });
 }
