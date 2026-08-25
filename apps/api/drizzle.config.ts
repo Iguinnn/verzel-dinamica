@@ -9,4 +9,6 @@ export default defineConfig({
       process.env.DATABASE_URL ??
       "postgresql://postgres:postgres@localhost:5432/rotating_parking",
   },
+  strict: true,
+  verbose: true,
 });

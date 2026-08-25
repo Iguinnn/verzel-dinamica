@@ -40,7 +40,10 @@ cp apps/web/.env.example apps/web/.env.local
 npm run dev
 ```
 
-O frontend fica em `http://localhost:3000` e a API em `http://localhost:3333`.
+O comando `npm run dev` inicia o PostgreSQL pelo Docker Compose, aguarda o
+healthcheck, aplica as migrations pendentes e inicia o frontend e a API no mesmo
+terminal. O frontend fica em `http://localhost:3000` e a API em
+`http://localhost:3333`.
 
 O BFF usa `BACKEND_MODE=mock` para devolver fixtures locais ou `BACKEND_MODE=live` para consultar o Express. Os dois modos validam a resposta com o mesmo contrato compartilhado.
 
@@ -54,6 +57,10 @@ O BFF usa `BACKEND_MODE=mock` para devolver fixtures locais ou `BACKEND_MODE=liv
 
 ```bash
 npm run dev
+npm run db:up
+npm run db:migrate
+npm run db:logs
+npm run db:down
 npm run lint
 npm run typecheck
 npm test
