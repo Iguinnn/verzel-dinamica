@@ -7,10 +7,12 @@
     "build": "tsc -p tsconfig.build.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx src/db/seed.ts",
     "dev": "tsx watch src/index.ts",
     "lint": "tsc --noEmit",
     "start": "node dist/index.js",
-    "test": "tsx --test src/app.test.ts",
+    "test": "tsx --test src/app.test.ts src/auth.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

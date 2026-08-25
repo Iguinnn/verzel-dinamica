@@ -5,9 +5,12 @@ import test from "node:test";
 import { sectorListResponseSchema } from "@parking/contracts";
 
 import { createApp } from "./app.js";
+import { createMemoryUserRepository } from "./repositories/users.js";
 
 test("serves health and contract-valid sectors", async (context) => {
   const app = createApp({
+    sessionSecret: "test-session-secret",
+    users: createMemoryUserRepository(),
     sectors: {
       async list() {
         return {
